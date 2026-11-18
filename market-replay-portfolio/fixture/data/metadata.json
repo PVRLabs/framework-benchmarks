@@ -1,0 +1,16 @@
+{
+  "tradingDate": "2026-09-30",
+  "timezone": "America/New_York",
+  "session": "09:30-15:59",
+  "interval": "1 minute",
+  "sampleCountPerSymbol": 390,
+  "symbols": [
+    "AAPL",
+    "GOOG",
+    "NVDA"
+  ],
+  "field": "synthetic minute price",
+  "source": "Independent seeded Gaussian random walks calibrated to broad characteristics of a historical session",
+  "runtimeNetworkAccess": false,
+  "seed": "9127, 9128, 9129"
+}

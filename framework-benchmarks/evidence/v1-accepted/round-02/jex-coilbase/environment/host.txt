@@ -1,0 +1,4 @@
+2026-11-18T03:00:01Z
+Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux
+PRETTY_NAME="Linux Mint 21"
+Model name:                              AMD Ryzen 7 4700U with Radeon Graphics

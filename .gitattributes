@@ -1,0 +1,2 @@
+# Preserve the frozen replay fixture byte for byte.
+market-replay-portfolio/fixture/data/*.csv -text

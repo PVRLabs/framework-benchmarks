@@ -1,0 +1,5 @@
+Linux lima-fb-512 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+Hypervisor vendor:                       KVM
+Mem:          463596      187556       53212        1096      244936      276040
+Swap:              0           0           0
+PRETTY_NAME="Ubuntu 24.04.4 LTS"

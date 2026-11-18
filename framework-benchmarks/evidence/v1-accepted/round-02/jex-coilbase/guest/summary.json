@@ -1,0 +1,34 @@
+{
+  "candidate": "jex-coilbase",
+  "flags": [
+    "-Xms16m",
+    "-Xmx80m",
+    "-XX:+UseG1GC",
+    "-Duser.timezone=UTC"
+  ],
+  "idle_seconds": 30,
+  "stabilize_seconds": 10,
+  "errors": [],
+  "postgres_start_seconds": 2.3415705200000048,
+  "postgres_cgroup": "/sys/fs/cgroup/system.slice/system-postgresql.slice/postgresql@18-main.service",
+  "launch_monotonic": 1261.820326862,
+  "pid": 2257,
+  "ready_seconds": 5.877556997000056,
+  "app_exit": 143,
+  "forced_shutdown": false,
+  "postgres_stopped": true,
+  "oom_kill_delta": 0,
+  "sample_counts": {
+    "baseline": 3,
+    "idle": 29,
+    "idle-check": 1,
+    "light-load": 29,
+    "measurement": 179,
+    "postgres-only": 3,
+    "postgres-startup": 3,
+    "stabilize": 9,
+    "startup": 6,
+    "warmup": 120
+  },
+  "status": "completed"
+}

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 670 486" role="img" aria-labelledby="title desc">
+<title id="title">Accepted v1 benchmark results</title>
+<desc id="desc">Zero-based bars show the two observed rounds for each implementation. All values are labeled.</desc>
+<rect width="670" height="486" rx="12" fill="#f5f8fb"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#182a40" font-size="14">
+<rect x="20" y="16" width="18" height="10" fill="#17649c"/><text x="45" y="26">Round 1</text>
+<rect x="130" y="16" width="18" height="10" fill="#26755e"/><text x="155" y="26">Round 2</text>
+<g aria-label="Readiness (s)"><text x="20" y="55" font-size="17" font-weight="bold">Readiness (s)</text>
+<path d="M177 66v108" stroke="#8997a6"/>
+<text x="20" y="86">Jex + CoilBase</text>
+<rect x="178" y="69" width="147.33" height="10" fill="#17649c"/><text x="332.33" y="79" font-size="12">5.20</text>
+<rect x="178" y="84" width="166.60" height="10" fill="#26755e"/><text x="351.60" y="94" font-size="12">5.88</text>
+<text x="20" y="122">Quarkus + CoilBase</text>
+<rect x="178" y="105" width="183.60" height="10" fill="#17649c"/><text x="368.60" y="115" font-size="12">6.48</text>
+<rect x="178" y="120" width="190.68" height="10" fill="#26755e"/><text x="375.68" y="130" font-size="12">6.73</text>
+<text x="20" y="158">Spring Boot + JDBC</text>
+<rect x="178" y="141" width="360.97" height="10" fill="#17649c"/><text x="545.97" y="151" font-size="12">12.74</text>
+<rect x="178" y="156" width="358.13" height="10" fill="#26755e"/><text x="543.13" y="166" font-size="12">12.64</text>
+</g>
+<g aria-label="Sustained peak app RSS (MiB)"><text x="20" y="200" font-size="17" font-weight="bold">Sustained peak app RSS (MiB)</text>
+<path d="M177 211v108" stroke="#8997a6"/>
+<text x="20" y="231">Jex + CoilBase</text>
+<rect x="178" y="214" width="256.16" height="10" fill="#17649c"/><text x="441.16" y="224" font-size="12">150.68</text>
+<rect x="178" y="229" width="262.48" height="10" fill="#26755e"/><text x="447.48" y="239" font-size="12">154.40</text>
+<text x="20" y="267">Quarkus + CoilBase</text>
+<rect x="178" y="250" width="335.07" height="10" fill="#17649c"/><text x="520.07" y="260" font-size="12">197.10</text>
+<rect x="178" y="265" width="330.58" height="10" fill="#26755e"/><text x="515.58" y="275" font-size="12">194.46</text>
+<text x="20" y="303">Spring Boot + JDBC</text>
+<rect x="178" y="286" width="369.29" height="10" fill="#17649c"/><text x="554.29" y="296" font-size="12">217.23</text>
+<rect x="178" y="301" width="388.04" height="10" fill="#26755e"/><text x="573.04" y="311" font-size="12">228.26</text>
+</g>
+<g aria-label="Sustained p99 (ms)"><text x="20" y="345" font-size="17" font-weight="bold">Sustained p99 (ms)</text>
+<path d="M177 356v108" stroke="#8997a6"/>
+<text x="20" y="376">Jex + CoilBase</text>
+<rect x="178" y="359" width="332.92" height="10" fill="#17649c"/><text x="517.92" y="369" font-size="12">9.40</text>
+<rect x="178" y="374" width="337.52" height="10" fill="#26755e"/><text x="522.52" y="384" font-size="12">9.53</text>
+<text x="20" y="412">Quarkus + CoilBase</text>
+<rect x="178" y="395" width="340.35" height="10" fill="#17649c"/><text x="525.35" y="405" font-size="12">9.61</text>
+<rect x="178" y="410" width="338.94" height="10" fill="#26755e"/><text x="523.94" y="420" font-size="12">9.57</text>
+<text x="20" y="448">Spring Boot + JDBC</text>
+<rect x="178" y="431" width="354.52" height="10" fill="#17649c"/><text x="539.52" y="441" font-size="12">10.01</text>
+<rect x="178" y="446" width="360.90" height="10" fill="#26755e"/><text x="545.90" y="456" font-size="12">10.19</text>
+</g>
+</g></svg>

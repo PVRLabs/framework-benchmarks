@@ -1,0 +1,10 @@
+{
+  "base_url": "http://127.0.0.1:8080",
+  "seed": 42,
+  "users": 1000,
+  "rate": 20,
+  "concurrency": 8,
+  "duration_seconds": 30,
+  "timeout_seconds": 5,
+  "operations": {"portfolio": 40, "edit": 25, "valuation": 25, "latest": 8, "history": 2}
+}

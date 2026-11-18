@@ -1,0 +1,18 @@
+{
+  "userId": 1,
+  "holdings": [
+    {
+      "symbol": "AAPL",
+      "quantity": 8.0
+    },
+    {
+      "symbol": "GOOG",
+      "quantity": 33.0
+    },
+    {
+      "symbol": "NVDA",
+      "quantity": 30.0
+    }
+  ],
+  "redaction": "Market prices and derived valuations omitted from public evidence."
+}

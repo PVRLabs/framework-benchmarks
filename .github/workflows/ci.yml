@@ -1,0 +1,92 @@
+name: Correctness CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Temurin 25.0.4.1 and Maven 3.9.9
+        run: |
+          url=https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1
+          archive=OpenJDK25U-jdk_x64_linux_hotspot_25.0.4.1_1.tar.gz
+          curl -fLsS --retry 2 "$url/$archive" -o "$RUNNER_TEMP/$archive"
+          curl -fLsS "$url/$archive.sha256.txt" | (cd "$RUNNER_TEMP" && sha256sum -c -)
+          tar -xf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP"
+          java_home="$RUNNER_TEMP/jdk-25.0.4.1+1"
+          echo "JAVA_HOME=$java_home" >> "$GITHUB_ENV"
+          echo "$java_home/bin" >> "$GITHUB_PATH"
+
+          archive=apache-maven-3.9.9-bin.tar.gz
+          url=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9
+          curl -fsS "$url/$archive" -o "$RUNNER_TEMP/$archive"
+          checksum=$(curl -fsS "$url/$archive.sha512")
+          printf '%s  %s\n' "$checksum" "$RUNNER_TEMP/$archive" | sha512sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/apache-maven-3.9.9/bin" >> "$GITHUB_PATH"
+      - name: Build and test applications
+        run: |
+          mvn -B -f market-replay-portfolio/app/pom.xml clean package
+          mvn -B -f framework-benchmarks/quarkus-coilbase/pom.xml clean package
+          mvn -B -f framework-benchmarks/jex-coilbase/pom.xml clean package
+      - name: Verify Linux distributions
+        run: |
+          spring=market-replay-portfolio/app/target/market-replay-portfolio-0.1.0-SNAPSHOT.jar
+          java -Djarmode=tools -jar "$spring" extract --destination "$RUNNER_TEMP/spring-layout"
+          python3 - "$RUNNER_TEMP/spring-layout" <<'PY'
+          import sys
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          spring = Path(sys.argv[1])
+          quarkus = Path("framework-benchmarks/quarkus-coilbase/target/quarkus-app")
+          jex = Path("framework-benchmarks/jex-coilbase/target")
+          distributions = (
+              (spring / "market-replay-portfolio-0.1.0-SNAPSHOT.jar", spring / "lib",
+               ("spring-boot-", "spring-jdbc-", "tomcat-embed-core-", "HikariCP-", "postgresql-")),
+              (quarkus / "quarkus-run.jar", quarkus / "lib/main",
+               ("io.quarkus.quarkus-rest-", "xyz.pvrlabs.coilbase-core-", "org.jdbi.jdbi3-core-",
+                "io.agroal.agroal-pool-", "org.postgresql.postgresql-", "com.aayushatharva.brotli4j.native-linux-x86_64-")),
+              (jex / "portfolio-jex-coilbase.jar", jex / "lib",
+               ("avaje-jex-", "coilbase-core-", "coilbase-jex-", "jdbi3-core-", "HikariCP-", "postgresql-")),
+          )
+          for launcher, libraries, required in distributions:
+              assert launcher.is_file(), f"Missing launcher: {launcher}"
+              for dependency in required:
+                  assert list(libraries.glob(f"{dependency}*.jar")), f"Missing {dependency} in {libraries}"
+
+          for root in (spring, quarkus, jex / "lib"):
+              assert not list(root.rglob("._*")), f"AppleDouble files in {root}"
+
+          jars = [launcher for launcher, _, _ in distributions]
+          for root in (spring, quarkus, jex / "lib"):
+              jars.extend(root.rglob("*.jar"))
+          for jar in set(jars):
+              with ZipFile(jar) as archive:
+                  assert all(not any(part.startswith("._") for part in name.split("/"))
+                             for name in archive.namelist()), f"AppleDouble entries in {jar}"
+
+          assert list((quarkus / "app").glob("portfolio-quarkus-coilbase-*.jar"))
+          assert not list(quarkus.rglob("*native-osx*.jar"))
+          print("Verified Spring Boot, Quarkus, and Jex Linux distributions")
+          PY
+      - name: Test Python fixture, workload, and harness
+        run: |
+          python3 -m unittest discover -s market-replay-portfolio/fixture/tests
+          python3 -m unittest discover -s market-replay-portfolio/workload
+          python3 -m unittest discover -s framework-benchmarks/tests
+      - name: Verify offline report regeneration
+        run: |
+          evidence=framework-benchmarks/evidence/v1-accepted
+          cp -a "$evidence" "$RUNNER_TEMP/v1-report"
+          rm "$RUNNER_TEMP/v1-report/report.html"
+          python3 framework-benchmarks/scripts/colocated-suite.py report "$RUNNER_TEMP/v1-report/suite.json"
+          cmp "$evidence/report.html" "$RUNNER_TEMP/v1-report/report.html"

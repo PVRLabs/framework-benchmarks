@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/opt/boot27/bin/java",
+    "-Xms16m",
+    "-Xmx80m",
+    "-XX:+UseG1GC",
+    "-Duser.timezone=UTC",
+    "-Xlog:gc:file=/home/benchmark/fb-runs/v1-accepted/round-02/quarkus-coilbase/gc.log",
+    "-jar",
+    "/home/benchmark/fb-v1-run-001-quarkus/quarkus-app/quarkus-run.jar"
+  ],
+  "environment": {
+    "SERVER_PORT": "8080",
+    "MARKET_DB_URL": "jdbc:postgresql://127.0.0.1:5432/fb_baseline",
+    "MARKET_DB_USER": "fb_baseline",
+    "MARKET_DB_PASSWORD": "fb_baseline",
+    "PORTFOLIO_SEED_USERS": "1000",
+    "MARKET_FIXTURE_URL": "http://127.0.0.1:8090/quotes",
+    "MARKET_POLL_ENABLED": "true",
+    "MARKET_POLL_INTERVAL_MS": "60000",
+    "MARKET_POLL_INITIAL_DELAY_MS": "0"
+  }
+}

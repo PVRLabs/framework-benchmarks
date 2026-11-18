@@ -1,0 +1,111 @@
+{
+  "id": "v1-accepted",
+  "created_utc": "2026-11-18T02:39:49.648798+00:00",
+  "host": "benchmark-host",
+  "vm": "fb-512",
+  "protocol": {
+    "id": "v1",
+    "jvm": [
+      "-Xms16m",
+      "-Xmx80m",
+      "-XX:+UseG1GC",
+      "-Duser.timezone=UTC"
+    ],
+    "guest": "QEMU/KVM, 1 vCPU, 512 MiB allocated, zero swap",
+    "postgres": {
+      "max_connections": "10",
+      "superuser_reserved_connections": "1",
+      "jit": "off",
+      "max_parallel_workers_per_gather": "0",
+      "max_parallel_workers": "0",
+      "shared_buffers": "2048 8kB",
+      "work_mem": "1024 kB",
+      "maintenance_work_mem": "16384 kB",
+      "io_method": "worker",
+      "fsync": "on",
+      "autovacuum": "on",
+      "wal_level": "replica"
+    },
+    "pool_max": 4,
+    "quote_poll_seconds": 60,
+    "replay_step_seconds": 3600,
+    "stabilize_seconds": 10,
+    "idle_seconds": 30,
+    "light_seconds": 30,
+    "warmup_seconds": 125,
+    "sustained_seconds": 185,
+    "light_rate": 5,
+    "sustained_rate": 40,
+    "workers": 8,
+    "users": 1000,
+    "seed": 42,
+    "sample_window_markers": true,
+    "operations": {
+      "portfolio": 40,
+      "edit": 25,
+      "valuation": 25,
+      "latest": 8,
+      "history": 2
+    },
+    "rounds": 2,
+    "jdk_build": "27+35-2325",
+    "timeout_seconds": 5
+  },
+  "candidates": [
+    {
+      "id": "jex-coilbase",
+      "stack": "Avaje Jex + CoilBase + HikariCP",
+      "bundle": "/home/benchmark/fb-v1-run-001-jex",
+      "evidence": "round-01/jex-coilbase",
+      "execution": "finished",
+      "status": "completed",
+      "round": 1
+    },
+    {
+      "id": "quarkus-coilbase",
+      "stack": "Quarkus REST + CoilBase + Agroal",
+      "bundle": "/home/benchmark/fb-v1-run-001-quarkus",
+      "evidence": "round-01/quarkus-coilbase",
+      "execution": "finished",
+      "status": "completed",
+      "round": 1
+    },
+    {
+      "id": "spring-boot",
+      "stack": "Spring Boot (Tomcat) + Spring JDBC + HikariCP",
+      "bundle": "/home/benchmark/fb-v1-run-001-spring",
+      "evidence": "round-01/spring-boot",
+      "execution": "finished",
+      "status": "completed",
+      "round": 1
+    },
+    {
+      "id": "jex-coilbase",
+      "stack": "Avaje Jex + CoilBase + HikariCP",
+      "bundle": "/home/benchmark/fb-v1-run-001-jex",
+      "evidence": "round-02/jex-coilbase",
+      "execution": "finished",
+      "status": "completed",
+      "round": 2
+    },
+    {
+      "id": "quarkus-coilbase",
+      "stack": "Quarkus REST + CoilBase + Agroal",
+      "bundle": "/home/benchmark/fb-v1-run-001-quarkus",
+      "evidence": "round-02/quarkus-coilbase",
+      "execution": "finished",
+      "status": "completed",
+      "round": 2
+    },
+    {
+      "id": "spring-boot",
+      "stack": "Spring Boot (Tomcat) + Spring JDBC + HikariCP",
+      "bundle": "/home/benchmark/fb-v1-run-001-spring",
+      "evidence": "round-02/spring-boot",
+      "execution": "finished",
+      "status": "completed",
+      "round": 2
+    }
+  ],
+  "status": "completed"
+}

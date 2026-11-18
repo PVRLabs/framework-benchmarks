@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v1-accepted · Framework Benchmarks</title>
+<style>
+body {font: 16px system-ui,sans-serif; color:#162739; background:#f7f9fc; max-width:75rem; margin:2rem auto; padding:0 1rem}
+table {border-collapse:collapse; width:100%; background:white} th,td {padding:.5rem; text-align:left; border:1px solid #c9d5df; vertical-align:top}
+pre {white-space:pre-wrap; overflow-wrap:anywhere} a {color:#135b94} figure {margin:1rem 0; max-width:43rem}
+figcaption {font-weight:600} svg {width:100%; fill:#162739; background:white} rect {fill:#26728e}
+</style>
+<body><h1>Framework Benchmarks · v1-accepted</h1>
+<p>2026-11-18T02:39:49.648798+00:00 · completed · benchmark-host / fb-512</p>
+<p>Protocol v1. Two sequential rounds per candidate. Latency runs from scheduled
+client slot to response completion, including dispatch, queueing and SSH transport.
+Guest memory reports sampled peaks and minima at roughly 1 Hz. PostgreSQL PSS
+sums proportional memory across sampled database processes. MemAvailable estimates
+guest headroom. The guest sampler shares the application vCPU. OS caches can remain warm.</p>
+<p>Successful-request latency from failed or incomplete phases is listed in the table
+when independently verified. Charts include completed phases with verified environments.</p>
+<p><a href="suite.json">Suite manifest</a></p>
+<h2>Comparisons</h2>
+<figure><figcaption>App readiness (s)</figcaption><svg role="img" aria-label="App readiness (s)" viewBox="0 0 640 212"><text x="4" y="25">jex-coilbase · Round 1</text><rect x="245" y="11" width="132.56" height="18"/><text x="385.56" y="25">5.20</text><text x="4" y="59">quarkus-coilbase · Round 1</text><rect x="245" y="45" width="165.35" height="18"/><text x="418.35" y="59">6.48</text><text x="4" y="93">spring-boot · Round 1</text><rect x="245" y="79" width="325.00" height="18"/><text x="578.00" y="93">12.74</text><text x="4" y="127">jex-coilbase · Round 2</text><rect x="245" y="113" width="149.93" height="18"/><text x="402.93" y="127">5.88</text><text x="4" y="161">quarkus-coilbase · Round 2</text><rect x="245" y="147" width="171.62" height="18"/><text x="424.62" y="161">6.73</text><text x="4" y="195">spring-boot · Round 2</text><rect x="245" y="181" width="322.44" height="18"/><text x="575.44" y="195">12.64</text></svg></figure>
+<figure><figcaption>Idle peak app RSS (MiB)</figcaption><svg role="img" aria-label="Idle peak app RSS (MiB)" viewBox="0 0 640 212"><text x="4" y="25">jex-coilbase · Round 1</text><rect x="245" y="11" width="207.69" height="18"/><text x="460.69" y="25">126.71</text><text x="4" y="59">quarkus-coilbase · Round 1</text><rect x="245" y="45" width="252.02" height="18"/><text x="505.02" y="59">153.75</text><text x="4" y="93">spring-boot · Round 1</text><rect x="245" y="79" width="324.83" height="18"/><text x="577.83" y="93">198.17</text><text x="4" y="127">jex-coilbase · Round 2</text><rect x="245" y="113" width="207.21" height="18"/><text x="460.21" y="127">126.41</text><text x="4" y="161">quarkus-coilbase · Round 2</text><rect x="245" y="147" width="273.87" height="18"/><text x="526.87" y="161">167.08</text><text x="4" y="195">spring-boot · Round 2</text><rect x="245" y="181" width="325.00" height="18"/><text x="578.00" y="195">198.28</text></svg></figure>
+<figure><figcaption>Light-load peak app RSS (MiB)</figcaption><svg role="img" aria-label="Light-load peak app RSS (MiB)" viewBox="0 0 640 212"><text x="4" y="25">jex-coilbase · Round 1</text><rect x="245" y="11" width="225.39" height="18"/><text x="478.39" y="25">144.81</text><text x="4" y="59">quarkus-coilbase · Round 1</text><rect x="245" y="45" width="263.99" height="18"/><text x="516.99" y="59">169.61</text><text x="4" y="93">spring-boot · Round 1</text><rect x="245" y="79" width="325.00" height="18"/><text x="578.00" y="93">208.81</text><text x="4" y="127">jex-coilbase · Round 2</text><rect x="245" y="113" width="223.52" height="18"/><text x="476.52" y="127">143.61</text><text x="4" y="161">quarkus-coilbase · Round 2</text><rect x="245" y="147" width="274.52" height="18"/><text x="527.52" y="161">176.38</text><text x="4" y="195">spring-boot · Round 2</text><rect x="245" y="181" width="314.57" height="18"/><text x="567.57" y="195">202.11</text></svg></figure>
+<figure><figcaption>Sustained aggregate p99 (ms)</figcaption><svg role="img" aria-label="Sustained aggregate p99 (ms)" viewBox="0 0 640 212"><text x="4" y="25">jex-coilbase · Round 1</text><rect x="245" y="11" width="299.93" height="18"/><text x="552.93" y="25">9.40</text><text x="4" y="59">quarkus-coilbase · Round 1</text><rect x="245" y="45" width="306.53" height="18"/><text x="559.53" y="59">9.61</text><text x="4" y="93">spring-boot · Round 1</text><rect x="245" y="79" width="319.12" height="18"/><text x="572.12" y="93">10.01</text><text x="4" y="127">jex-coilbase · Round 2</text><rect x="245" y="113" width="303.85" height="18"/><text x="556.85" y="127">9.53</text><text x="4" y="161">quarkus-coilbase · Round 2</text><rect x="245" y="147" width="305.29" height="18"/><text x="558.29" y="161">9.57</text><text x="4" y="195">spring-boot · Round 2</text><rect x="245" y="181" width="325.00" height="18"/><text x="578.00" y="195">10.19</text></svg></figure>
+<h2>Sustained latency across rounds</h2><table><thead><tr><th scope="col">Candidate</th><th scope="col">p95 spread (ms)</th><th scope="col">p99 spread (ms)</th></tr></thead><tbody>
+<tr><th scope="row">jex-coilbase</th><td>0.20</td><td>0.12</td></tr>
+<tr><th scope="row">quarkus-coilbase</th><td>0.06</td><td>0.04</td></tr>
+<tr><th scope="row">spring-boot</th><td>0.05</td><td>0.18</td></tr>
+</tbody></table>
+<h2>Startup</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">jex-coilbase · Round 1</th>
+<th scope="col">quarkus-coilbase · Round 1</th>
+<th scope="col">spring-boot · Round 1</th>
+<th scope="col">jex-coilbase · Round 2</th>
+<th scope="col">quarkus-coilbase · Round 2</th>
+<th scope="col">spring-boot · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">App readiness (s)</th><td>5.20</td><td>6.48</td><td>12.74</td><td>5.88</td><td>6.73</td><td>12.64</td></tr>
+<tr><th scope="row">PostgreSQL start (s)</th><td>2.58</td><td>2.35</td><td>2.34</td><td>2.34</td><td>2.33</td><td>2.33</td></tr>
+</tbody></table>
+<h2>Idle</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">jex-coilbase · Round 1</th>
+<th scope="col">quarkus-coilbase · Round 1</th>
+<th scope="col">spring-boot · Round 1</th>
+<th scope="col">jex-coilbase · Round 2</th>
+<th scope="col">quarkus-coilbase · Round 2</th>
+<th scope="col">spring-boot · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">Peak app RSS (MiB)</th><td>126.71</td><td>153.75</td><td>198.17</td><td>126.41</td><td>167.08</td><td>198.28</td></tr>
+<tr><th scope="row">Peak PostgreSQL PSS (MiB)</th><td>41.63</td><td>35.33</td><td>34.66</td><td>40.29</td><td>34.96</td><td>33.06</td></tr>
+<tr><th scope="row">Min guest MemAvailable (MiB)</th><td>156.74</td><td>123.67</td><td>75.09</td><td>147.81</td><td>108.30</td><td>77.91</td></tr>
+<tr><th scope="row">Guest samples</th><td>29</td><td>29</td><td>29</td><td>29</td><td>29</td><td>29</td></tr>
+<tr><th scope="row">Peak app PSS (MiB)</th><td>123.94</td><td>150.97</td><td>195.47</td><td>123.88</td><td>164.41</td><td>195.88</td></tr>
+</tbody></table>
+<h2>Light load</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">jex-coilbase · Round 1</th>
+<th scope="col">quarkus-coilbase · Round 1</th>
+<th scope="col">spring-boot · Round 1</th>
+<th scope="col">jex-coilbase · Round 2</th>
+<th scope="col">quarkus-coilbase · Round 2</th>
+<th scope="col">spring-boot · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">Peak app RSS (MiB)</th><td>144.81</td><td>169.61</td><td>208.81</td><td>143.61</td><td>176.38</td><td>202.11</td></tr>
+<tr><th scope="row">Peak PostgreSQL PSS (MiB)</th><td>46.21</td><td>39.03</td><td>37.36</td><td>44.82</td><td>38.66</td><td>35.76</td></tr>
+<tr><th scope="row">Min guest MemAvailable (MiB)</th><td>138.49</td><td>108.30</td><td>64.31</td><td>133.34</td><td>100.47</td><td>73.25</td></tr>
+<tr><th scope="row">Guest samples</th><td>29</td><td>30</td><td>30</td><td>29</td><td>29</td><td>29</td></tr>
+<tr><th scope="row">Aggregate p95 (ms)</th><td>23.84</td><td>28.60</td><td>32.74</td><td>24.46</td><td>29.94</td><td>31.07</td></tr>
+<tr><th scope="row">Aggregate p99 (ms)</th><td>35.77</td><td>53.44</td><td>43.47</td><td>46.74</td><td>50.78</td><td>51.02</td></tr>
+<tr><th scope="row">Dispatch p99 (ms)</th><td>0.74</td><td>0.64</td><td>0.74</td><td>0.66</td><td>0.67</td><td>0.67</td></tr>
+<tr><th scope="row">Completed/s incl. drain</th><td>5.00</td><td>5.00</td><td>5.00</td><td>5.00</td><td>5.00</td><td>5.00</td></tr>
+<tr><th scope="row">Scheduled</th><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td></tr>
+<tr><th scope="row">Completed</th><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td></tr>
+<tr><th scope="row">Successful</th><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td></tr>
+<tr><th scope="row">Errors incl. timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Unsent</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Peak app PSS (MiB)</th><td>142.04</td><td>166.83</td><td>206.12</td><td>141.08</td><td>173.75</td><td>199.66</td></tr>
+<tr><th scope="row">Queue p99 (ms)</th><td>0.29</td><td>0.34</td><td>0.25</td><td>0.26</td><td>0.28</td><td>0.28</td></tr>
+<tr><th scope="row">HTTP p99 (ms)</th><td>35.73</td><td>52.85</td><td>42.70</td><td>46.26</td><td>50.73</td><td>50.28</td></tr>
+</tbody></table>
+<h2>Sustained warm-up</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">jex-coilbase · Round 1</th>
+<th scope="col">quarkus-coilbase · Round 1</th>
+<th scope="col">spring-boot · Round 1</th>
+<th scope="col">jex-coilbase · Round 2</th>
+<th scope="col">quarkus-coilbase · Round 2</th>
+<th scope="col">spring-boot · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">Peak app RSS (MiB)</th><td>150.33</td><td>197.09</td><td>219.50</td><td>149.05</td><td>194.19</td><td>228.02</td></tr>
+<tr><th scope="row">Peak PostgreSQL PSS (MiB)</th><td>46.21</td><td>42.03</td><td>38.25</td><td>44.82</td><td>38.08</td><td>38.11</td></tr>
+<tr><th scope="row">Min guest MemAvailable (MiB)</th><td>132.62</td><td>72.22</td><td>49.37</td><td>125.65</td><td>80.41</td><td>39.07</td></tr>
+<tr><th scope="row">Guest samples</th><td>121</td><td>120</td><td>120</td><td>120</td><td>121</td><td>121</td></tr>
+<tr><th scope="row">Aggregate p95 (ms)</th><td>8.92</td><td>10.50</td><td>10.93</td><td>9.69</td><td>10.39</td><td>11.07</td></tr>
+<tr><th scope="row">Aggregate p99 (ms)</th><td>11.99</td><td>14.45</td><td>14.91</td><td>13.24</td><td>14.48</td><td>16.02</td></tr>
+<tr><th scope="row">Dispatch p99 (ms)</th><td>0.60</td><td>0.56</td><td>0.59</td><td>0.59</td><td>0.57</td><td>0.57</td></tr>
+<tr><th scope="row">Completed/s incl. drain</th><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td></tr>
+<tr><th scope="row">Scheduled</th><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td></tr>
+<tr><th scope="row">Completed</th><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td></tr>
+<tr><th scope="row">Successful</th><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td></tr>
+<tr><th scope="row">Errors incl. timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Unsent</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Peak app PSS (MiB)</th><td>147.53</td><td>194.38</td><td>216.86</td><td>146.50</td><td>191.56</td><td>225.58</td></tr>
+<tr><th scope="row">Queue p99 (ms)</th><td>0.25</td><td>0.26</td><td>0.28</td><td>0.34</td><td>0.27</td><td>0.25</td></tr>
+<tr><th scope="row">HTTP p99 (ms)</th><td>11.46</td><td>13.83</td><td>14.53</td><td>12.59</td><td>13.90</td><td>15.48</td></tr>
+</tbody></table>
+<h2>Sustained measurement</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">jex-coilbase · Round 1</th>
+<th scope="col">quarkus-coilbase · Round 1</th>
+<th scope="col">spring-boot · Round 1</th>
+<th scope="col">jex-coilbase · Round 2</th>
+<th scope="col">quarkus-coilbase · Round 2</th>
+<th scope="col">spring-boot · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">Peak app RSS (MiB)</th><td>150.68</td><td>197.10</td><td>217.23</td><td>154.40</td><td>194.46</td><td>228.26</td></tr>
+<tr><th scope="row">Peak PostgreSQL PSS (MiB)</th><td>46.21</td><td>40.19</td><td>35.57</td><td>44.14</td><td>36.14</td><td>38.00</td></tr>
+<tr><th scope="row">Min guest MemAvailable (MiB)</th><td>122.22</td><td>70.89</td><td>49.68</td><td>120.16</td><td>79.76</td><td>38.24</td></tr>
+<tr><th scope="row">Guest samples</th><td>178</td><td>179</td><td>179</td><td>179</td><td>178</td><td>179</td></tr>
+<tr><th scope="row">Aggregate p95 (ms)</th><td>7.23</td><td>7.64</td><td>7.91</td><td>7.44</td><td>7.70</td><td>7.86</td></tr>
+<tr><th scope="row">Aggregate p99 (ms)</th><td>9.40</td><td>9.61</td><td>10.01</td><td>9.53</td><td>9.57</td><td>10.19</td></tr>
+<tr><th scope="row">Dispatch p99 (ms)</th><td>0.58</td><td>0.57</td><td>0.58</td><td>0.57</td><td>0.56</td><td>0.58</td></tr>
+<tr><th scope="row">Completed/s incl. drain</th><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td></tr>
+<tr><th scope="row">Scheduled</th><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td></tr>
+<tr><th scope="row">Completed</th><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td></tr>
+<tr><th scope="row">Successful</th><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td></tr>
+<tr><th scope="row">Errors incl. timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Unsent</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Peak app PSS (MiB)</th><td>147.88</td><td>194.42</td><td>214.68</td><td>151.86</td><td>191.84</td><td>225.83</td></tr>
+<tr><th scope="row">Queue p99 (ms)</th><td>0.25</td><td>0.24</td><td>0.25</td><td>0.25</td><td>0.25</td><td>0.28</td></tr>
+<tr><th scope="row">HTTP p99 (ms)</th><td>8.98</td><td>9.19</td><td>9.57</td><td>9.08</td><td>9.18</td><td>9.81</td></tr>
+</tbody></table>
+<h2>Protocol</h2><p>PostgreSQL 18 Theory A. Each candidate starts with a fresh database, fixture and application. Light load runs after idle, followed immediately by sustained warm-up and measurement.</p>
+<pre>{
+  &quot;id&quot;: &quot;v1&quot;,
+  &quot;jvm&quot;: [
+    &quot;-Xms16m&quot;,
+    &quot;-Xmx80m&quot;,
+    &quot;-XX:+UseG1GC&quot;,
+    &quot;-Duser.timezone=UTC&quot;
+  ],
+  &quot;guest&quot;: &quot;QEMU/KVM, 1 vCPU, 512 MiB allocated, zero swap&quot;,
+  &quot;postgres&quot;: {
+    &quot;max_connections&quot;: &quot;10&quot;,
+    &quot;superuser_reserved_connections&quot;: &quot;1&quot;,
+    &quot;jit&quot;: &quot;off&quot;,
+    &quot;max_parallel_workers_per_gather&quot;: &quot;0&quot;,
+    &quot;max_parallel_workers&quot;: &quot;0&quot;,
+    &quot;shared_buffers&quot;: &quot;2048 8kB&quot;,
+    &quot;work_mem&quot;: &quot;1024 kB&quot;,
+    &quot;maintenance_work_mem&quot;: &quot;16384 kB&quot;,
+    &quot;io_method&quot;: &quot;worker&quot;,
+    &quot;fsync&quot;: &quot;on&quot;,
+    &quot;autovacuum&quot;: &quot;on&quot;,
+    &quot;wal_level&quot;: &quot;replica&quot;
+  },
+  &quot;pool_max&quot;: 4,
+  &quot;quote_poll_seconds&quot;: 60,
+  &quot;replay_step_seconds&quot;: 3600,
+  &quot;stabilize_seconds&quot;: 10,
+  &quot;idle_seconds&quot;: 30,
+  &quot;light_seconds&quot;: 30,
+  &quot;warmup_seconds&quot;: 125,
+  &quot;sustained_seconds&quot;: 185,
+  &quot;light_rate&quot;: 5,
+  &quot;sustained_rate&quot;: 40,
+  &quot;workers&quot;: 8,
+  &quot;users&quot;: 1000,
+  &quot;seed&quot;: 42,
+  &quot;sample_window_markers&quot;: true,
+  &quot;operations&quot;: {
+    &quot;portfolio&quot;: 40,
+    &quot;edit&quot;: 25,
+    &quot;valuation&quot;: 25,
+    &quot;latest&quot;: 8,
+    &quot;history&quot;: 2
+  },
+  &quot;rounds&quot;: 2,
+  &quot;jdk_build&quot;: &quot;27+35-2325&quot;,
+  &quot;timeout_seconds&quot;: 5
+}</pre><h2>Candidates and raw evidence</h2>
+<h3>Avaje Jex + CoilBase + HikariCP · Round 1</h3><p>completed · <a href="round-01/jex-coilbase/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux lima-fb-512 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux / PRETTY_NAME=&quot;Ubuntu 24.04.4 LTS&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          463596      163072       30600        1096      292016      300524</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Ubuntu 18.7-1.pgdg24.04+2)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/home/benchmark/fb-runs/v1-accepted/round-01/jex-coilbase/gc.log -jar /home/benchmark/fb-v1-run-001-jex/portfolio-jex-coilbase.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.0.2.jar, avaje-http-api-3.12.1.jar, avaje-jex-3.6.jar, coilbase-core-0.1.0-preview5.jar, coilbase-jex-0.1.0-preview5.jar, postgresql-42.7.8.jar</p>
+<p><a href="round-01/jex-coilbase/environment/artifacts.txt">Bundle hashes</a> · <a href="round-01/jex-coilbase/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-01/jex-coilbase/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-01/jex-coilbase/guest/samples.jsonl">Guest samples</a> · <a href="round-01/jex-coilbase/load.json">Sustained slot observations</a></p>
+<h3>Quarkus REST + CoilBase + Agroal · Round 1</h3><p>completed · <a href="round-01/quarkus-coilbase/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux lima-fb-512 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux / PRETTY_NAME=&quot;Ubuntu 24.04.4 LTS&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          463596      188908       23108        1096      273688      274688</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Ubuntu 18.7-1.pgdg24.04+2)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/home/benchmark/fb-runs/v1-accepted/round-01/quarkus-coilbase/gc.log -jar /home/benchmark/fb-v1-run-001-quarkus/quarkus-app/quarkus-run.jar</p>
+<p><strong>Stack JARs</strong><br>io.agroal.agroal-pool-3.2.1.jar, io.quarkus.quarkus-rest-3.40.1.jar, org.postgresql.postgresql-42.7.13.jar, xyz.pvrlabs.coilbase-core-0.1.0-preview5.jar</p>
+<p><a href="round-01/quarkus-coilbase/environment/artifacts.txt">Bundle hashes</a> · <a href="round-01/quarkus-coilbase/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-01/quarkus-coilbase/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-01/quarkus-coilbase/guest/samples.jsonl">Guest samples</a> · <a href="round-01/quarkus-coilbase/load.json">Sustained slot observations</a></p>
+<h3>Spring Boot (Tomcat) + Spring JDBC + HikariCP · Round 1</h3><p>completed · <a href="round-01/spring-boot/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux lima-fb-512 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux / PRETTY_NAME=&quot;Ubuntu 24.04.4 LTS&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          463596      187508       53036        1096      245160      276088</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Ubuntu 18.7-1.pgdg24.04+2)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/home/benchmark/fb-runs/v1-accepted/round-01/spring-boot/gc.log -jar /home/benchmark/fb-v1-run-001-spring/application.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.0.2.jar, postgresql-42.7.13.jar, spring-boot-4.1.1.jar, spring-jdbc-7.0.9.jar, tomcat-embed-core-11.0.24.jar</p>
+<p><a href="round-01/spring-boot/environment/artifacts.txt">Bundle hashes</a> · <a href="round-01/spring-boot/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-01/spring-boot/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-01/spring-boot/guest/samples.jsonl">Guest samples</a> · <a href="round-01/spring-boot/load.json">Sustained slot observations</a></p>
+<h3>Avaje Jex + CoilBase + HikariCP · Round 2</h3><p>completed · <a href="round-02/jex-coilbase/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux lima-fb-512 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux / PRETTY_NAME=&quot;Ubuntu 24.04.4 LTS&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          463596      189152       79064        1096      217488      274444</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Ubuntu 18.7-1.pgdg24.04+2)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/home/benchmark/fb-runs/v1-accepted/round-02/jex-coilbase/gc.log -jar /home/benchmark/fb-v1-run-001-jex/portfolio-jex-coilbase.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.0.2.jar, avaje-http-api-3.12.1.jar, avaje-jex-3.6.jar, coilbase-core-0.1.0-preview5.jar, coilbase-jex-0.1.0-preview5.jar, postgresql-42.7.8.jar</p>
+<p><a href="round-02/jex-coilbase/environment/artifacts.txt">Bundle hashes</a> · <a href="round-02/jex-coilbase/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-02/jex-coilbase/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-02/jex-coilbase/guest/samples.jsonl">Guest samples</a> · <a href="round-02/jex-coilbase/load.json">Sustained slot observations</a></p>
+<h3>Quarkus REST + CoilBase + Agroal · Round 2</h3><p>completed · <a href="round-02/quarkus-coilbase/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux lima-fb-512 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux / PRETTY_NAME=&quot;Ubuntu 24.04.4 LTS&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          463596      192256       36788        1096      256656      271340</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Ubuntu 18.7-1.pgdg24.04+2)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/home/benchmark/fb-runs/v1-accepted/round-02/quarkus-coilbase/gc.log -jar /home/benchmark/fb-v1-run-001-quarkus/quarkus-app/quarkus-run.jar</p>
+<p><strong>Stack JARs</strong><br>io.agroal.agroal-pool-3.2.1.jar, io.quarkus.quarkus-rest-3.40.1.jar, org.postgresql.postgresql-42.7.13.jar, xyz.pvrlabs.coilbase-core-0.1.0-preview5.jar</p>
+<p><a href="round-02/quarkus-coilbase/environment/artifacts.txt">Bundle hashes</a> · <a href="round-02/quarkus-coilbase/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-02/quarkus-coilbase/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-02/quarkus-coilbase/guest/samples.jsonl">Guest samples</a> · <a href="round-02/quarkus-coilbase/load.json">Sustained slot observations</a></p>
+<h3>Spring Boot (Tomcat) + Spring JDBC + HikariCP · Round 2</h3><p>completed · <a href="round-02/spring-boot/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux lima-fb-512 6.8.0-134-generic #134-Ubuntu SMP PREEMPT_DYNAMIC Fri Jun 26 18:43:11 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux / PRETTY_NAME=&quot;Ubuntu 24.04.4 LTS&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          463596      187556       53212        1096      244936      276040</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Ubuntu 18.7-1.pgdg24.04+2)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/home/benchmark/fb-runs/v1-accepted/round-02/spring-boot/gc.log -jar /home/benchmark/fb-v1-run-001-spring/application.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.0.2.jar, postgresql-42.7.13.jar, spring-boot-4.1.1.jar, spring-jdbc-7.0.9.jar, tomcat-embed-core-11.0.24.jar</p>
+<p><a href="round-02/spring-boot/environment/artifacts.txt">Bundle hashes</a> · <a href="round-02/spring-boot/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-02/spring-boot/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-02/spring-boot/guest/samples.jsonl">Guest samples</a> · <a href="round-02/spring-boot/load.json">Sustained slot observations</a></p>
+</body></html>
