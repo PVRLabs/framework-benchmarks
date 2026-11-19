@@ -67,9 +67,18 @@ The maintainer manually selects the featured benchmark from local or CI runs.
 CI provides independent reproduction and verification. Its results do not
 automatically replace the featured measurements.
 
-Each target is one evolving implementation. An improvement such as Spring Boot
-AOT can replace its current configuration within the same target. Historical
-results stay tied to the exact component versions and configuration used.
+Each target is one evolving implementation. Historical results stay tied to
+the exact component versions and configuration used.
+
+### Why AOT is not featured
+
+Featured HotSpot results prioritize conventional deployments, reproducibility
+and low maintenance overhead. Framework AOT and JDK AOT caches can deliver
+meaningful runtime improvements, as the [PetClinic AOT experiment](https://github.com/ejboy/coilbase-petclinic/blob/main/docs/aot-experiment.md)
+shows. They also add build and training workflows, deployment validation and
+cache compatibility requirements. We aim to represent practical, maintainable
+application deployments, and may evaluate AOT or Native Image separately as
+optional optimization studies.
 
 The accepted v1 runs used historical market prices. The public checkout uses
 synthetic prices with the same symbols, sample count, and replay cadence.
