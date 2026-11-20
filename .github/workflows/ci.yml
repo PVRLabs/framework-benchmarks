@@ -85,7 +85,7 @@ jobs:
           assert not list(quarkus.rglob("*native-osx*.jar"))
           print("Verified Spring Boot, Quarkus, Jex, and Micronaut Linux distributions")
           PY
-      - name: Verify Micronaut against PostgreSQL
+      - name: Prepare PostgreSQL for correctness checks
         run: |
           if command -v pg_lsclusters >/dev/null; then
             pg_lsclusters --no-header | while read -r version cluster port status rest; do
@@ -95,9 +95,27 @@ jobs:
             done
           fi
           sudo bash framework-benchmarks/scripts/postgres-setup.sh
-          # Debian allocates the next configured port if older clusters exist.
-          sudo pg_conftool 18 main set port 5432
+          # Package installation can skip automatic cluster creation.
+          if [[ -f /etc/postgresql/18/main/postgresql.conf ]]; then
+            sudo pg_conftool 18 main set port 5432
+          else
+            sudo pg_createcluster --port 5432 18 main
+          fi
           sudo bash framework-benchmarks/scripts/prepare-postgres.sh
+      - name: Verify Spring Boot against PostgreSQL
+        run: |
+          python3 framework-benchmarks/scripts/verify-postgres.py --local \
+            --output "$RUNNER_TEMP/spring-correctness"
+      - name: Verify Quarkus against PostgreSQL
+        run: |
+          python3 framework-benchmarks/scripts/verify-postgres.py --local --quarkus \
+            --output "$RUNNER_TEMP/quarkus-correctness"
+      - name: Verify Jex against PostgreSQL
+        run: |
+          python3 framework-benchmarks/scripts/verify-postgres.py --local --jex \
+            --output "$RUNNER_TEMP/jex-correctness"
+      - name: Verify Micronaut against PostgreSQL
+        run: |
           python3 framework-benchmarks/scripts/verify-postgres.py --local --micronaut \
             --output "$RUNNER_TEMP/micronaut-correctness"
       - name: Test Python fixture, workload, and harness

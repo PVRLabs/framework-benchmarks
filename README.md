@@ -114,7 +114,7 @@ python3 -m unittest discover -s framework-benchmarks/tests
 [GitHub Actions](.github/workflows/ci.yml) runs on pushes and pull requests.
 It builds all four applications on Ubuntu with Temurin 25.0.4.1 and
 Maven 3.9.9, runs the available Java tests, checks the Linux distributions,
-runs the shared PostgreSQL verifier for Micronaut, and runs the fixture,
+runs the shared PostgreSQL verifier for all four candidates, and runs the fixture,
 workload and harness tests. It also compares a freshly
 generated offline report byte for byte with the accepted HTML.
 
