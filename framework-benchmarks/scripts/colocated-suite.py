@@ -3,6 +3,7 @@
 import argparse
 from datetime import datetime, timezone
 from html import escape
+import hashlib
 import importlib
 import json
 import math
@@ -20,9 +21,11 @@ STACKS = {
     'quarkus-coilbase': 'Quarkus REST + CoilBase + Agroal',
     'spring-boot': 'Spring Boot (Tomcat) + Spring JDBC + HikariCP',
 }
+FOUR_CANDIDATE_STACKS = {**STACKS, 'micronaut-data-jdbc': 'Micronaut HTTP + Data JDBC + HikariCP'}
+PUBLIC_FIXTURE_SHA256 = 'c0aa93e19e0dead195427852c7743a5b31949e2bacc0ea1da41f9298fb94aae1'
 STACK_JARS = re.compile(r'^(?:.*\.)?(?:avaje-jex|avaje-http-api|coilbase-core|coilbase-jex|'
                         r'HikariCP|postgresql|quarkus-rest|agroal-pool|spring-boot|'
-                        r'spring-jdbc|tomcat-embed-core)-[0-9].*\.jar$')
+                        r'spring-jdbc|tomcat-embed-core|micronaut-http-server-netty|micronaut-data-jdbc|micronaut-jdbc-hikari)-[0-9].*\.jar$')
 POSTGRES = dict(max_connections='10', superuser_reserved_connections='1', jit='off',
                 max_parallel_workers_per_gather='0', max_parallel_workers='0',
                 shared_buffers='2048 8kB', work_mem='1024 kB',
@@ -33,7 +36,7 @@ ROSTER_ERROR = 'Expected exactly one bundle or manifest entry for each of: ' + '
 MAX_SAMPLE_GAP_SECONDS = 3
 
 
-def protocol(preparation=False, version='3.4-mvp'):
+def protocol(preparation=False, version='3.4-mvp', *, archived=False):
     settings = dict(id='3.4-mvp-preparation' if preparation else '3.4-mvp',
                 jvm=['-Xms16m', '-Xmx80m', '-XX:+UseG1GC', '-Duser.timezone=UTC'],
                 guest='QEMU/KVM, 1 vCPU, 512 MiB allocated, zero swap',
@@ -47,10 +50,12 @@ def protocol(preparation=False, version='3.4-mvp'):
                 sample_window_markers=True,
                 operations=dict(portfolio=40, edit=25, valuation=25, latest=8, history=2))
     if version == 'v1':
-        settings.update(id='v1-preparation' if preparation else 'v1',
+        settings.update(id=version + ('-preparation' if preparation else ''),
                         rounds=2, warmup_seconds=3 if preparation else 125,
                         sustained_seconds=3 if preparation else 185,
                         jdk_build='27+35-2325', timeout_seconds=5)
+    if version == 'v1' and not archived:
+        settings.update(fixture_sha256=PUBLIC_FIXTURE_SHA256, postgres_version='18.7')
     return settings
 
 
@@ -239,6 +244,13 @@ def inspect_candidate(root, candidate, settings):
         if 'jdk_build' in settings:
             check(f"build {settings['jdk_build']})" in runtime['JDK'], 'Unexpected JDK build')
         check(pg['server_version'].startswith('18.'), 'Unexpected PostgreSQL major version')
+        if 'fixture_sha256' in settings:
+            check(pg['server_version'].split()[0] == settings['postgres_version'], 'Unexpected PostgreSQL version')
+            inputs = read_json(run/'inputs.json')
+            check(inputs['quotes-2026-09-30.csv'] == settings['fixture_sha256'], 'Unexpected replay fixture')
+            check(set(inputs) == {'server.py', 'quotes-2026-09-30.csv', 'run.py'}
+                  and all(re.fullmatch(r'[0-9a-f]{64}', digest) for digest in inputs.values()),
+                  'Invalid fixture or workload hash inventory')
         check(all(pg[key] == value for key, value in settings['postgres'].items()),
               'PostgreSQL settings differ from the suite protocol')
         check(info['flags'] == settings['jvm'], 'JVM flags differ from the suite protocol')
@@ -306,10 +318,16 @@ def render(suite, root):
     candidates = suite['candidates']
     esc = escape
     settings = suite['protocol']
-    versioned = settings['id'] in ('v1', 'v1-preparation')
+    versioned = 'rounds' in settings
     introduction = ('Protocol v1. Two sequential rounds per candidate.' if settings['id'] == 'v1' else
                     'Protocol v1 preparation. Two rounds with shortened smoke windows.'
                     if versioned else 'Phase 3.4 provisional workflow. One short run per candidate.')
+    if 'fixture_sha256' in settings:
+        description = ('Four-candidate suite using v1 methodology and synthetic market prices. '
+                       if settings['id'].startswith('v1-four-candidate') else
+                       'Protocol v1 with synthetic market prices. ')
+        introduction = description + ('Two rounds with shortened smoke windows.' if settings['id'].endswith('-preparation')
+                           else 'Two sequential rounds per candidate.')
     limitation = ('' if versioned else
                   'Long-window stability, repeatability, and final 512 MiB feasibility remain open.\n')
     parts = [f"""<!doctype html>
@@ -346,7 +364,7 @@ when independently verified. Charts include completed phases with verified envir
         parts.append('<h2>Sustained latency across rounds</h2><table><thead><tr>'
                      '<th scope="col">Candidate</th><th scope="col">p95 spread (ms)</th>'
                      '<th scope="col">p99 spread (ms)</th></tr></thead><tbody>')
-        for key in STACKS:
+        for key in dict.fromkeys(candidate['id'] for candidate in candidates):
             runs = [c for c in candidates if c['id'] == key and c['status'] == 'completed']
             spreads = []
             for metric in ('p95_ms', 'p99_ms'):
@@ -389,11 +407,14 @@ when independently verified. Charts include completed phases with verified envir
                      'JVM flags', 'Java launch', 'Stack JARs'):
             parts.append(f'<p><strong>{name}</strong><br>{display(candidate["runtime"].get(name))}</p>')
         links = []
-        for filename, label in [('environment/artifacts.txt', 'Bundle hashes'),
-                                ('guest/postgres-settings.txt', 'Effective PostgreSQL settings'),
-                                ('guest/effective-jvm-flags.txt', 'Effective JVM flags'),
-                                ('guest/samples.jsonl', 'Guest samples'),
-                                ('load.json', 'Sustained slot observations')]:
+        sources = [('environment/artifacts.txt', 'Bundle hashes'),
+                   ('guest/postgres-settings.txt', 'Effective PostgreSQL settings'),
+                   ('guest/effective-jvm-flags.txt', 'Effective JVM flags'),
+                   ('guest/samples.jsonl', 'Guest samples'),
+                   ('load.json', 'Sustained slot observations')]
+        if 'fixture_sha256' in settings:
+            sources.append(('inputs.json', 'Fixture and workload hashes'))
+        for filename, label in sources:
             target = evidence/filename
             links.append(f'<a href="{quote(target.relative_to(root).as_posix())}">{label}</a>'
                          if target.is_file() else f'{label} unavailable')
@@ -422,7 +443,7 @@ def verify_round_artifacts(root, candidates):
         run['compatible'] = False
         run['status'] = 'failed'
 
-    for key in STACKS:
+    for key in dict.fromkeys(run['id'] for run in candidates):
         verified = []
         for run in candidates:
             if run['id'] != key or not run['compatible']:
@@ -449,10 +470,18 @@ def regenerate(path, refresh=False):
     entries = suite['candidates']
     settings = suite.get('protocol', {})
     protocol_id = settings.get('id')
-    if protocol_id in ('v1', 'v1-preparation'):
-        expected_settings = protocol(protocol_id == 'v1-preparation', 'v1')
+    version = (protocol_id or '').removesuffix('-preparation')
+    synthetic = 'fixture_sha256' in settings
+    versioned = version in ('v1', 'v1-four-candidate')
+    if versioned:
+        # The pre-release archive used v1 without a fixture hash. Earlier
+        # synthetic preparation evidence used a temporary manifest identifier.
+        stacks = FOUR_CANDIDATE_STACKS if synthetic else STACKS
+        expected_settings = protocol(protocol_id.endswith('-preparation'), 'v1',
+                                     archived=version == 'v1' and not synthetic)
+        expected_settings['id'] = protocol_id
         check(settings == expected_settings, 'Manifest settings differ from protocol v1')
-        roster = [(number, key) for number in range(1, settings['rounds']+1) for key in STACKS]
+        roster = [(number, key) for number in range(1, settings['rounds']+1) for key in stacks]
         candidates = {(c.get('round'), c['id']): c for c in entries}
         check(len(entries) == len(roster) and candidates.keys() == set(roster),
               'Expected one entry per candidate in each protocol v1 round')
@@ -464,8 +493,16 @@ def regenerate(path, refresh=False):
         candidates = {c['id']: c for c in entries}
         check(len(entries) == len(roster) and candidates.keys() == STACKS.keys(), ROSTER_ERROR)
     suite['candidates'] = [inspect_candidate(path.parent, candidates[key], settings) for key in roster]
-    if protocol_id in ('v1', 'v1-preparation'):
+    if versioned:
         verify_round_artifacts(path.parent, suite['candidates'])
+    if versioned and synthetic:
+        runs = [run for run in suite['candidates'] if run['compatible']]
+        inventories = [read_json(path.parent/run['evidence']/'inputs.json') for run in runs]
+        if inventories and any(inventory != inventories[0] for inventory in inventories[1:]):
+            for run in runs:
+                run['failures'].append('Fixture or workload inputs differ across the suite')
+                run['compatible'] = False
+                run['status'] = 'failed'
     statuses = {c['status'] for c in suite['candidates']}
     suite['status'] = ('completed' if statuses == {'completed'} else
                        'failed' if 'failed' in statuses else 'incomplete')
@@ -476,16 +513,21 @@ def regenerate(path, refresh=False):
 
 
 def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-mvp'):
-    check(bundles.keys() == STACKS.keys(), ROSTER_ERROR)
+    stacks = FOUR_CANDIDATE_STACKS if version == 'v1' else STACKS
+    check(bundles.keys() == stacks.keys(), 'Expected exactly one bundle for each of: ' + ', '.join(stacks))
+    if version == 'v1':
+        fixture = runner.FIXTURE/'data/quotes-2026-09-30.csv'
+        check(hashlib.sha256(fixture.read_bytes()).hexdigest() == PUBLIC_FIXTURE_SHA256,
+              'The v1 suite requires the public synthetic replay fixture')
     settings = protocol(preparation, version)
     host = platform.node()
     check(platform.system() == 'Linux', 'Run the suite on a Linux host')
     output.mkdir(parents=True, exist_ok=False)
-    candidates = [dict(id=key, stack=STACKS[key], bundle=bundles[key], evidence=key, execution='pending',
+    candidates = [dict(id=key, stack=stacks[key], bundle=bundles[key], evidence=key, execution='pending',
                        status='incomplete', phases={phase: {'status': 'incomplete'} for phase in PHASES},
                        failures=[])
-                  for key in STACKS]
-    if version == 'v1':
+                  for key in stacks]
+    if 'rounds' in settings:
         candidates = [dict(candidate, round=number,
                            evidence=f"{round_path(number)}/{candidate['id']}")
                       for number in range(1, settings['rounds']+1) for candidate in candidates]
@@ -547,7 +589,7 @@ def main():
     run.add_argument('--vm', default='fb-512')
     run.add_argument('--guest-run-root', default='/tmp/fb-runs')
     run.add_argument('--bundle', action='append', required=True, metavar='CANDIDATE=/GUEST/PATH')
-    run.add_argument('--protocol', choices=('3.4-mvp', 'v1'), default='3.4-mvp')
+    run.add_argument('--protocol', choices=('v1',), default='v1')
     run.add_argument('--preparation', action='store_true')
     report = commands.add_parser('report')
     report.add_argument('manifest', type=Path)
@@ -559,14 +601,15 @@ def main():
             report.error(str(exc))
         print(args.manifest.parent/'report.html')
         return 0
+    stacks = FOUR_CANDIDATE_STACKS
     bundles = {}
     for item in args.bundle:
         key, sep, bundle = item.partition('=')
-        if not sep or key not in STACKS or key in bundles or not Path(bundle).is_absolute():
+        if not sep or key not in stacks or key in bundles or not Path(bundle).is_absolute():
             run.error(f'invalid or duplicate candidate bundle: {item}')
         bundles[key] = bundle
-    if bundles.keys() != STACKS.keys():
-        run.error(ROSTER_ERROR)
+    if bundles.keys() != stacks.keys():
+        run.error('Expected exactly one bundle for each of: ' + ', '.join(stacks))
     return run_suite(args.output, bundles, args.vm, args.guest_run_root, args.preparation, args.protocol)
 
 

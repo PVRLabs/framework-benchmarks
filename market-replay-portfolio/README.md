@@ -15,7 +15,9 @@ These operations combine HTTP requests, database reads and writes,
 transactions, JSON responses, and background processing. The benchmark
 measures startup, memory use, throughput, and latency under a shared workload.
 
-The Spring Boot implementation is in `app/`. The CSV fixture serves successive
+The [Spring Boot reference implementation](app/) and the Quarkus, Jex, and
+[Micronaut Data JDBC](../framework-benchmarks/micronaut-data-jdbc/) v1 candidates
+use the same PostgreSQL schema. The CSV fixture serves successive
 quote snapshots at the configured replay interval. Each application polls that
 fixture, persists quote history in PostgreSQL, and uses persisted prices to
 value portfolios. See the [main README](../README.md) for results, methodology, and

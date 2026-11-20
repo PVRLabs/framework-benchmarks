@@ -6,20 +6,27 @@ memory consumption, throughput, and latency with equivalent applications, shared
 workloads, and documented environments. Correctness checks establish comparable
 behavior before measurement.
 
-## Featured benchmark
+## Initial v1 candidates
 
-The accepted v1 comparison is the project's first benchmark.
-[Avaje Jex](https://avaje.io/jex/) + [CoilBase](https://github.com/PVRLabs/coilbase),
-[Quarkus REST](https://quarkus.io/guides/rest/) + [CoilBase](https://github.com/PVRLabs/coilbase),
-and [Spring Boot](https://spring.io/projects/spring-boot/) +
-[Spring JDBC](https://docs.spring.io/spring-framework/reference/data-access/jdbc.html)
-implement the same Market Replay Portfolio application and share a PostgreSQL schema, replay
-fixture, correctness contract, and measurement protocol.
+- Spring Boot + Spring JDBC
+- Quarkus REST + CoilBase
+- Avaje Jex + CoilBase
+- [Micronaut HTTP + Micronaut Data JDBC](framework-benchmarks/micronaut-data-jdbc/README.md)
 
 [Market Replay Portfolio](market-replay-portfolio/README.md) simulates an
 investment portfolio service with portfolio reads and updates, valuations,
 and periodic market price ingestion. These operations exercise HTTP, database
 access, transactions, and background processing.
+
+All four use the same PostgreSQL schema, correctness contract, and public
+synthetic replay. The four-candidate comparison is awaiting measurement and
+acceptance. See the [v1 suite guide](framework-benchmarks/suite-v1.md).
+
+## Featured benchmark — pre-release evidence
+
+The chart and report below show the accepted pre-release comparison of Jex,
+Quarkus, and Spring Boot using historical market prices. The four-candidate
+v1 comparison will replace this featured result after acceptance.
 
 The runs used a Linux host (AMD Ryzen 7 4700U) running a QEMU/KVM Ubuntu VM
 with 1 vCPU, 512 MiB RAM, and no swap. The application and PostgreSQL shared
@@ -53,7 +60,7 @@ Readers interested in Hibernate or another persistence approach are welcome to
 reproduce the benchmark and submit a proposal or PR with supporting measurements.
 Additions should answer a specific comparison question.
 
-![Accepted v1 results for Jex, Quarkus, and Spring Boot in rounds 1 and 2. Jex had the fastest readiness and lowest sampled peak app RSS in both rounds. Sustained p99 ranged from 9.40 to 10.19 ms.](docs/featured-v1.svg)
+![Accepted pre-release results for Jex, Quarkus, and Spring Boot in rounds 1 and 2. Jex had the fastest readiness and lowest sampled peak app RSS in both rounds. Sustained p99 ranged from 9.40 to 10.19 ms.](docs/featured-v1.svg)
 
 Readiness is time to the first successful database-backed readiness check.
 RSS is the sampled peak for the application during sustained measurement.
@@ -80,7 +87,7 @@ cache compatibility requirements. We aim to represent practical, maintainable
 application deployments, and may evaluate AOT or Native Image separately as
 optional optimization studies.
 
-The accepted v1 runs used historical market prices. The public checkout uses
+The pre-release runs used historical market prices. The v1 suite uses
 synthetic prices with the same symbols, sample count, and replay cadence.
 The public evidence omits historical prices and derived valuations from the
 post-load portfolio snapshots. The accepted performance measurements are
@@ -90,7 +97,7 @@ The archived evidence retains slot observations, memory samples, pressure
 counters, and artifact hashes. Host identifiers and local paths were redacted,
 and infrastructure captures unrelated to report regeneration were omitted.
 
-## Reproducing results
+## Building and verifying
 
 Run commands from the checkout root. Build with JDK 25 and Maven 3.9:
 
@@ -98,15 +105,17 @@ Run commands from the checkout root. Build with JDK 25 and Maven 3.9:
 mvn -B -f market-replay-portfolio/app/pom.xml package
 mvn -B -f framework-benchmarks/quarkus-coilbase/pom.xml package
 mvn -B -f framework-benchmarks/jex-coilbase/pom.xml package
+mvn -B -f framework-benchmarks/micronaut-data-jdbc/pom.xml package
 python3 -m unittest discover -s framework-benchmarks/tests
 ```
 
 ### Correctness CI
 
 [GitHub Actions](.github/workflows/ci.yml) runs on pushes and pull requests.
-It builds all three applications on Ubuntu with Temurin 25.0.4.1 and
+It builds all four applications on Ubuntu with Temurin 25.0.4.1 and
 Maven 3.9.9, runs the available Java tests, checks the Linux distributions,
-and runs the fixture, workload and harness tests. It also compares a freshly
+runs the shared PostgreSQL verifier for Micronaut, and runs the fixture,
+workload and harness tests. It also compares a freshly
 generated offline report byte for byte with the accepted HTML.
 
 ### VM setup
@@ -150,51 +159,24 @@ Run the checks sequentially, with a new output path each time:
 python3 framework-benchmarks/scripts/verify-postgres.py --output work/spring
 python3 framework-benchmarks/scripts/verify-postgres.py --quarkus --output work/quarkus
 python3 framework-benchmarks/scripts/verify-postgres.py --jex --output work/jex
+python3 framework-benchmarks/scripts/verify-postgres.py --micronaut --output work/micronaut
 tools/vm.sh exec fb-512 sudo systemctl stop postgresql@18-main
 ```
 
 ### Benchmark execution
 
-Run performance reproductions manually on a dedicated Linux QEMU/KVM host
-with stable resources for the guest, replay server, and load driver. Use the
-VM and runtime settings in the [frozen v1 protocol](framework-benchmarks/protocol-v1.md).
-Check the installed PostgreSQL package before reproducing the accepted
-environment. The setup script installs PostgreSQL 18 from PGDG, whose default
-package can change. The following check must pass for the accepted package
-version.
-
-```sh
-test "$(tools/vm.sh exec fb-512 dpkg-query -W -f='${Version}' postgresql-18)" = 18.7-1.pgdg24.04+2
-```
-
-Build fresh packages on Linux and pass the PostgreSQL correctness checks above
-before measuring. Keep the preparation and measured outputs under separate
-new paths in `work/`. Review the new suite against the protocol's acceptance
-criteria. The accepted report and measurements remain in
+Use the [v1 suite guide](framework-benchmarks/suite-v1.md) to prepare and run all
+four candidates on a dedicated Linux QEMU/KVM host. Keep new work under fresh
+paths in `work/`. The pre-release suite and report are archived under
 `framework-benchmarks/evidence/v1-accepted/`.
 
-Create three bundle directories. Each includes `colocated-guest.py` from
-`framework-benchmarks/scripts/` and `benchmark-preflight.py` from `tools/`.
-Copy the Jex JAR and its adjacent `lib/` together. Copy the entire Quarkus
-`quarkus-app/` directory. For Spring, extract the Boot layout with
-`java -Djarmode=tools -jar market-replay-portfolio/app/target/market-replay-portfolio-0.1.0-SNAPSHOT.jar extract --destination work/spring-bundle`.
-Name the extracted launcher `application.jar` and keep its adjacent libraries.
-
-Use `tools/prepare.sh fb-512 LOCAL_BUNDLE GUEST_BUNDLE NEW_CAPTURE_DIR` for
-each bundle. The following command checks both rounds with short windows.
-Use a fresh output directory and omit `--preparation` for measurement.
+### Regenerate the archived pre-release report
 
 ```sh
-python3 framework-benchmarks/scripts/colocated-suite.py run --vm fb-512 \
-  --protocol v1 --preparation --output work/preparation \
-  --bundle jex-coilbase=/tmp/fb-jex --bundle quarkus-coilbase=/tmp/fb-quarkus \
-  --bundle spring-boot=/tmp/fb-spring
-```
-
-### Offline report
-
-```sh
-python3 framework-benchmarks/scripts/colocated-suite.py report framework-benchmarks/evidence/v1-accepted/suite.json
+archive_copy=$(mktemp -d)
+cp -a framework-benchmarks/evidence/v1-accepted/. "$archive_copy/"
+python3 framework-benchmarks/scripts/colocated-suite.py report "$archive_copy/suite.json"
+cmp framework-benchmarks/evidence/v1-accepted/report.html "$archive_copy/report.html"
 ```
 
 The report uses Python's standard library and writes HTML beside the manifest.

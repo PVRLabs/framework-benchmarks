@@ -116,9 +116,10 @@ class SuiteTest(unittest.TestCase):
             self.assertEqual(manifest.read_bytes(), original_manifest)
 
     def test_v1_rounds_use_frozen_settings_and_unique_evidence(self):
+        roster = ('jex-coilbase', 'quarkus-coilbase', 'spring-boot', 'micronaut-data-jdbc')
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp)/'v1'
-            expected = [(number, key) for number in (1, 2) for key in suite.STACKS]
+            expected = [(number, key) for number in (1, 2) for key in roster]
             calls = []
 
             def run_candidate(args):
@@ -135,7 +136,7 @@ class SuiteTest(unittest.TestCase):
             with patch.object(suite.platform, 'node', return_value='benchmark-host'), \
                  patch.object(suite.platform, 'system', return_value='Linux'), \
                  patch.object(suite.runner, 'main', side_effect=run_candidate):
-                self.assertTrue(suite.run_suite(output, {key: '/'+key for key in suite.STACKS},
+                self.assertTrue(suite.run_suite(output, {key: '/'+key for key in roster},
                                                 'vm', '/runs', version='v1'))
             self.assertEqual(calls, [(f'round-{number:02d}', key) for number, key in expected])
             manifest = output/'suite.json'
@@ -147,6 +148,13 @@ class SuiteTest(unittest.TestCase):
             self.assertEqual(manifest.read_bytes(), original)
             self.assertEqual((output/'report.html').read_bytes(), html)
             self.assertIn('jex-coilbase · Round 2'.encode(), html)
+            self.assertEqual(recorded['protocol']['id'], 'v1')
+            self.assertEqual(recorded['protocol']['fixture_sha256'], suite.PUBLIC_FIXTURE_SHA256)
+            recorded['candidates'].pop()
+            write(manifest, recorded)
+            with self.assertRaisesRegex(ValueError, 'Expected one entry per candidate'):
+                suite.regenerate(manifest)
+            recorded = json.loads(original)
             recorded['candidates'][-1]['evidence'] = recorded['candidates'][2]['evidence']
             write(manifest, recorded)
             with self.assertRaisesRegex(ValueError, 'Unexpected protocol v1 evidence directory'):

@@ -16,6 +16,8 @@ import uuid
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT/'tools/vm.sh'
 PREPARATION_IDLE_SECONDS = 4
+FIXTURE = ROOT/'market-replay-portfolio/fixture'
+WORKLOAD = Path('market-replay-portfolio/workload/run.py')
 
 def stop_auxiliary(proc):
     """Reap our own child, escalating if SIGTERM is ignored."""
@@ -151,7 +153,7 @@ def host_activity():
 
 
 def run_load(output, seconds, rate=5, workers=8, name='load'):
-    driver = ROOT/'market-replay-portfolio/workload/run.py'
+    driver = ROOT/WORKLOAD
     config_path = output/f'{name}-config.json'
     config = json.loads(driver.with_name('default.json').read_text())
     config.update(base_url='http://127.0.0.1:18080', rate=rate, duration_seconds=seconds,
@@ -232,7 +234,7 @@ def main(argv=None):
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--guest-run-root', default='/tmp/fb-runs',
                    help='guest directory under which run evidence is created')
-    p.add_argument('--candidate',default='jex-coilbase',choices=['jex-coilbase','quarkus-coilbase','spring-boot'])
+    p.add_argument('--candidate',default='jex-coilbase',choices=['jex-coilbase','quarkus-coilbase','spring-boot', 'micronaut-data-jdbc'])
     p.add_argument('--failure-probe',action='store_true',help='deliberately unreachable fixture; readiness must fail')
     p.add_argument('--preparation',action='store_true')
     load = p.add_mutually_exclusive_group()
@@ -265,8 +267,12 @@ def main(argv=None):
     def call(*args,**kw):
         return sp.run(args,check=True,text=True,**kw)
     try:
+        inputs = (FIXTURE/'server.py', FIXTURE/'data/quotes-2026-09-30.csv', ROOT/WORKLOAD)
+        (a.output/'inputs.json').write_text(json.dumps({
+            path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in inputs
+        }, indent=2)+'\n')
         fixture_log = (a.output/'fixture.log').open('w'); logs.append(fixture_log)
-        fixture = sp.Popen([sys.executable,str(ROOT/'market-replay-portfolio/fixture/server.py'),
+        fixture = sp.Popen([sys.executable,str(FIXTURE/'server.py'),
                            '--port','18090','--step-seconds','3600'],stdout=fixture_log,stderr=sp.STDOUT)
         processes.append(fixture)
         for attempt in range(50):

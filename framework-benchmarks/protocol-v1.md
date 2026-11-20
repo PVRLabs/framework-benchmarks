@@ -1,17 +1,17 @@
 # Framework Benchmarks protocol v1
 
-Frozen on 2026-11-17 for the initial same-host comparison of Avaje Jex +
-CoilBase, Quarkus REST + CoilBase, and Spring Boot + Spring JDBC. Each
-implementation must pass the shared [Portfolio correctness contract](foundation.md#shared-correctness-requirements)
-before its performance results can be accepted.
-
-This public copy retains the frozen measurement rules. Host identity and local commands
-are replaced by the portable [reproduction guide](../README.md).
+The v1 comparison includes Spring Boot + Spring JDBC, Quarkus REST + CoilBase,
+Avaje Jex + CoilBase, and Micronaut HTTP + Micronaut Data JDBC. Each must pass
+the shared [Portfolio correctness contract](foundation.md#shared-correctness-requirements).
+The measurement method was frozen on 2026-11-17. The accepted three-candidate
+pre-release archive used historical market prices. The initial v1 comparison
+uses the public synthetic CSV for all four candidates. See the
+[v1 suite guide](suite-v1.md).
 
 ## Environment and inputs
 
 Use a dedicated [Ubuntu QEMU/KVM guest](vm-linux.yaml) with one vCPU,
-512 MiB RAM, and no swap. Colocate one candidate and PostgreSQL 18. Use the
+512 MiB RAM, and no swap. Colocate one candidate and PostgreSQL 18.7. Use the
 [compact PostgreSQL settings](scripts/prepare-postgres.sh) and a four-connection
 application pool limit for every candidate. Use OpenJDK HotSpot 27+35-2325,
 G1, `-Xms16m -Xmx80m`, and UTC. Record effective flags and settings and pin
@@ -30,12 +30,12 @@ unsent slots in the accounting.
 
 ## Execution
 
-Run two rounds on the same guest and physical host, in Jex, Quarkus, Spring Boot
-order each round. Before every candidate run, reset the disposable PostgreSQL
+Run two rounds on the same guest and physical host, in Jex, Quarkus, Spring Boot,
+Micronaut order each round. Before every candidate run, reset the disposable PostgreSQL
 database and seed, restart replay, and launch a fresh app. The guest stays up
 between runs and OS caches can remain warm. Preserve separate output directories
 for preparation and each candidate repetition. Smoke the combined command for
-all three candidates with shortened windows before the first accepted round.
+all four candidates with shortened windows before the first accepted round.
 
 | Phase | Frozen settings |
 | --- | --- |

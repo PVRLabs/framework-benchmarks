@@ -39,6 +39,7 @@ jobs:
           mvn -B -f market-replay-portfolio/app/pom.xml clean package
           mvn -B -f framework-benchmarks/quarkus-coilbase/pom.xml clean package
           mvn -B -f framework-benchmarks/jex-coilbase/pom.xml clean package
+          mvn -B -f framework-benchmarks/micronaut-data-jdbc/pom.xml clean package
       - name: Verify Linux distributions
         run: |
           spring=market-replay-portfolio/app/target/market-replay-portfolio-0.1.0-SNAPSHOT.jar
@@ -51,6 +52,7 @@ jobs:
           spring = Path(sys.argv[1])
           quarkus = Path("framework-benchmarks/quarkus-coilbase/target/quarkus-app")
           jex = Path("framework-benchmarks/jex-coilbase/target")
+          micronaut = Path("framework-benchmarks/micronaut-data-jdbc/target/distribution")
           distributions = (
               (spring / "market-replay-portfolio-0.1.0-SNAPSHOT.jar", spring / "lib",
                ("spring-boot-", "spring-jdbc-", "tomcat-embed-core-", "HikariCP-", "postgresql-")),
@@ -59,17 +61,20 @@ jobs:
                 "io.agroal.agroal-pool-", "org.postgresql.postgresql-", "com.aayushatharva.brotli4j.native-linux-x86_64-")),
               (jex / "portfolio-jex-coilbase.jar", jex / "lib",
                ("avaje-jex-", "coilbase-core-", "coilbase-jex-", "jdbi3-core-", "HikariCP-", "postgresql-")),
+              (micronaut / "portfolio-micronaut-data-jdbc.jar", micronaut / "lib",
+               ("micronaut-http-server-netty-", "micronaut-data-jdbc-", "micronaut-jdbc-hikari-",
+                "HikariCP-", "postgresql-")),
           )
           for launcher, libraries, required in distributions:
               assert launcher.is_file(), f"Missing launcher: {launcher}"
               for dependency in required:
                   assert list(libraries.glob(f"{dependency}*.jar")), f"Missing {dependency} in {libraries}"
 
-          for root in (spring, quarkus, jex / "lib"):
+          for root in (spring, quarkus, jex / "lib", micronaut):
               assert not list(root.rglob("._*")), f"AppleDouble files in {root}"
 
           jars = [launcher for launcher, _, _ in distributions]
-          for root in (spring, quarkus, jex / "lib"):
+          for root in (spring, quarkus, jex / "lib", micronaut):
               jars.extend(root.rglob("*.jar"))
           for jar in set(jars):
               with ZipFile(jar) as archive:
@@ -78,8 +83,23 @@ jobs:
 
           assert list((quarkus / "app").glob("portfolio-quarkus-coilbase-*.jar"))
           assert not list(quarkus.rglob("*native-osx*.jar"))
-          print("Verified Spring Boot, Quarkus, and Jex Linux distributions")
+          print("Verified Spring Boot, Quarkus, Jex, and Micronaut Linux distributions")
           PY
+      - name: Verify Micronaut against PostgreSQL
+        run: |
+          if command -v pg_lsclusters >/dev/null; then
+            pg_lsclusters --no-header | while read -r version cluster port status rest; do
+              if [[ "$status" == online* ]]; then
+                sudo pg_ctlcluster "$version" "$cluster" stop
+              fi
+            done
+          fi
+          sudo bash framework-benchmarks/scripts/postgres-setup.sh
+          # Debian allocates the next configured port if older clusters exist.
+          sudo pg_conftool 18 main set port 5432
+          sudo bash framework-benchmarks/scripts/prepare-postgres.sh
+          python3 framework-benchmarks/scripts/verify-postgres.py --local --micronaut \
+            --output "$RUNNER_TEMP/micronaut-correctness"
       - name: Test Python fixture, workload, and harness
         run: |
           python3 -m unittest discover -s market-replay-portfolio/fixture/tests

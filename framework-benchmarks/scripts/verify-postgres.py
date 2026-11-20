@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Portfolio PostgreSQL functional verification; host app, disposable DB in a Lima VM.
+"""Portfolio PostgreSQL functional verification against a disposable database.
 
-Requires a built Portfolio JAR, prepared fb_baseline database, and an existing
-tools/vm.sh DB tunnel. Never use on shared or valuable application state.
+Requires a built Portfolio JAR and a prepared fb_baseline database. Use an
+existing tools/vm.sh DB tunnel for Lima. Never use on shared application state.
 """
 import argparse
 import copy
@@ -102,15 +102,18 @@ def finish(summary, output, processes, server, admin):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--jex', action='store_true', help='verify Avaje Jex + CoilBase')
-    parser.add_argument('--quarkus', action='store_true', help='verify the Quarkus REST + CoilBase package')
+    candidate = parser.add_mutually_exclusive_group()
+    candidate.add_argument('--jex', action='store_true', help='verify Avaje Jex + CoilBase')
+    candidate.add_argument('--quarkus', action='store_true', help='verify the Quarkus REST + CoilBase package')
+    candidate.add_argument('--micronaut', action='store_true', help='verify Micronaut HTTP + Data JDBC')
     parser.add_argument('--health-path', help='operational database-health route; defaults per target')
-    parser.add_argument('--vm', default='fb-512')
-    parser.add_argument('--db-port', type=int, default=15432)
+    database = parser.add_mutually_exclusive_group()
+    database.add_argument('--vm', default='fb-512')
+    database.add_argument('--local', action='store_true', help='PostgreSQL 18 is on this disposable Linux host')
+    parser.add_argument('--db-port', type=int, help='defaults to 15432 with Lima or 5432 with --local')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
-    if args.jex and args.quarkus:
-        parser.error('choose only one application')
+    db_port = args.db_port if args.db_port is not None else (5432 if args.local else 15432)
     health_path = args.health_path or ('/healthz' if args.jex else '/actuator/health')
     args.output.mkdir(parents=True, exist_ok=False)
     jar = ROOT/'market-replay-portfolio/app/target/market-replay-portfolio-0.1.0-SNAPSHOT.jar'
@@ -118,24 +121,28 @@ def main():
         jar = ROOT/'framework-benchmarks/quarkus-coilbase/target/quarkus-app/quarkus-run.jar'
     if args.jex:
         jar = ROOT/'framework-benchmarks/jex-coilbase/target/portfolio-jex-coilbase.jar'
+    if args.micronaut:
+        jar = ROOT/'framework-benchmarks/micronaut-data-jdbc/target/distribution/portfolio-micronaut-data-jdbc.jar'
     assert jar.exists(), 'package the reference application first'
-    vm = [str(ROOT/'tools/vm.sh'), 'exec', args.vm]
-    admin = Database(vm + ['sudo','-u','postgres','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-d','postgres'])
-    db = Database(vm + ['sudo','-u','postgres','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-d','fb_baseline'])
+    db_command = [] if args.local else [str(ROOT/'tools/vm.sh'), 'exec', args.vm]
+    admin = Database(db_command + ['sudo','-u','postgres','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-d','postgres'])
+    db = Database(db_command + ['sudo','-u','postgres','psql','-X','-qAt','-v','ON_ERROR_STOP=1','-d','fb_baseline'])
     app_port, fixture_port = port(), port()
     base = f'http://127.0.0.1:{app_port}'
     env = {k:v for k,v in os.environ.items() if not k.startswith(('SPRING_','MARKET_','SEED_','POOL_','SERVER_','JAVA_TOOL_OPTIONS','JDK_JAVA_OPTIONS'))}
     env.update(SPRING_PROFILES_ACTIVE='postgres', SERVER_PORT=str(app_port),
-        MARKET_DB_URL=f'jdbc:postgresql://127.0.0.1:{args.db_port}/fb_baseline',
+        MARKET_DB_URL=f'jdbc:postgresql://127.0.0.1:{db_port}/fb_baseline',
         MARKET_DB_USER='fb_baseline', MARKET_DB_PASSWORD='fb_baseline',
         MARKET_FIXTURE_URL=f'http://127.0.0.1:{fixture_port}/quotes',
         MARKET_POLL_ENABLED='false', POOL_MAX_SIZE='4')
     app = fixture = server = None
     processes = []
     summary = {'status':'incomplete','purpose':'functional preparation, not performance or VM feasibility',
-        'vm':args.vm,'database':'fb_baseline','db_port':args.db_port,
-        'placement':'host JVM and fixture; PostgreSQL in existing VM',
-        'target':'jex-coilbase' if args.jex else 'quarkus-coilbase' if args.quarkus else 'spring-jdbc',
+        'vm':None if args.local else args.vm,'database':'fb_baseline','db_port':db_port,
+        'placement':'host JVM, fixture and PostgreSQL' if args.local else
+                    'host JVM and fixture; PostgreSQL in existing VM',
+        'target':'jex-coilbase' if args.jex else 'quarkus-coilbase' if args.quarkus else
+                 'micronaut-data-jdbc' if args.micronaut else 'spring-jdbc',
         'health_path':health_path,
         'launches':[], 'checks':[]}
     def passed(message):
@@ -174,11 +181,11 @@ def main():
             settings = db.sql("SELECT name,setting,unit,boot_val,source FROM pg_settings WHERE name IN ('max_connections','superuser_reserved_connections','reserved_connections','jit','max_parallel_workers_per_gather','max_parallel_workers','shared_buffers','work_mem','maintenance_work_mem','io_method','io_workers','effective_io_concurrency','maintenance_io_concurrency','fsync','autovacuum','wal_level') ORDER BY name;")
             (args.output/'postgres-settings.txt').write_text(settings+'\n')
             assert db.sql("SELECT current_setting('max_connections')='10' AND current_setting('superuser_reserved_connections')='1' AND current_setting('io_method')='worker' AND current_setting('shared_buffers')='16MB' AND current_setting('work_mem')='1MB' AND current_setting('maintenance_work_mem')='16MB' AND current_setting('jit')='off' AND current_setting('max_parallel_workers')='0' AND current_setting('max_parallel_workers_per_gather')='0';") == 't'
-            (args.output/'environment.txt').write_text(subprocess.check_output(vm+['bash','-lc','uname -a; free -m; cat /proc/swaps; psql --version'],text=True))
+            (args.output/'environment.txt').write_text(subprocess.check_output(db_command+['bash','-lc','uname -a; free -m; cat /proc/swaps; psql --version'],text=True))
             (args.output/'java.txt').write_text(subprocess.run(['java','-version'],capture_output=True,text=True,check=True).stderr)
             import hashlib
             summary['jar_sha256'] = hashlib.sha256(jar.read_bytes()).hexdigest()
-            if args.quarkus or args.jex:
+            if args.quarkus or args.jex or args.micronaut:
                 summary['package_sha256'] = {str(p.relative_to(jar.parent)):hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in sorted(jar.parent.rglob('*')) if p.is_file()}
             summary['started_at_utc'] = time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
@@ -214,7 +221,7 @@ def main():
             before = request(base,'/users/1/portfolio')
             stop(app)
             stop(fixture)
-            subprocess.run(vm+['sudo','systemctl','restart','postgresql@18-main'],check=True,timeout=30)
+            subprocess.run(db_command+['sudo','systemctl','restart','postgresql@18-main'],check=True,timeout=30)
             app = launch()
             assert request(base,'/users/1/portfolio') == before
             assert request(base,'/api/quotes/latest') == latest
@@ -255,7 +262,7 @@ finally:
  for connection in connections:
   connection.close()
 """
-            capacity_result = subprocess.run(vm+['sudo','-u','postgres','python3','-c',capacity],text=True,capture_output=True,check=True)
+            capacity_result = subprocess.run(db_command+['sudo','-u','postgres','python3','-c',capacity],text=True,capture_output=True,check=True)
             (args.output/'connection-capacity.txt').write_text(capacity_result.stdout)
             passed('ordinary connection limit and reserved administration slot with the live application pool')
 
