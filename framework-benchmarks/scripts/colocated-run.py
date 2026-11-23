@@ -244,6 +244,7 @@ def main(argv=None):
     p.add_argument('--warmup-seconds', type=int, default=0)
     p.add_argument('--workers', type=int, default=8)
     p.add_argument('--suite-light-seconds', type=int, choices=range(1, 61), metavar='1..60')
+    p.add_argument('--require-debian-13', action='store_true')
     a = p.parse_args(argv)
     if a.suite_light_seconds and not (a.duration_seconds and a.warmup_seconds):
         p.error('suite light load requires sustained load with warm-up')
@@ -302,6 +303,8 @@ def main(argv=None):
                    'python3',a.bundle+'/colocated-guest.py','--bundle',a.bundle,
                    '--output',guest,'--candidate',a.candidate]
         if a.failure_probe: command += ['--fixture-url','http://127.0.0.1:1/quotes']
+        if a.require_debian_13:
+            command.append('--require-debian-13')
         if a.preparation:
             idle_seconds = PREPARATION_IDLE_SECONDS if a.suite_light_seconds else 2
             command += ['--idle-seconds',str(idle_seconds),'--stabilize-seconds','1']

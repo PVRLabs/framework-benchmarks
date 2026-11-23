@@ -8,9 +8,12 @@ pre-release archive used historical market prices. The initial v1 comparison
 uses the public synthetic CSV for all four candidates. See the
 [v1 suite guide](suite-v1.md).
 
+The November 23 pre-release environment revision uses Debian 13. The initial
+four-candidate Ubuntu run failed acceptance and remains historical evidence.
+
 ## Environment and inputs
 
-Use a dedicated [Ubuntu QEMU/KVM guest](vm-linux.yaml) with one vCPU,
+Use a dedicated [Debian 13 QEMU/KVM guest](vm-linux.yaml) with one vCPU,
 512 MiB RAM, and no swap. Colocate one candidate and PostgreSQL 18.7. Use the
 [compact PostgreSQL settings](scripts/prepare-postgres.sh) and a four-connection
 application pool limit for every candidate. Use OpenJDK HotSpot 27+35-2325,

@@ -29,6 +29,7 @@ def main():
     p.add_argument('--measurement-seconds', type=int)
     p.add_argument('--warmup-seconds', type=int, default=0)
     p.add_argument('--suite-light-seconds', type=int)
+    p.add_argument('--require-debian-13', action='store_true')
     a = p.parse_args()
     a.output.mkdir(parents=True, exist_ok=False)
     out = a.output
@@ -96,8 +97,9 @@ def main():
     try:
         run('systemctl','stop','postgresql@18-main')
         assert not sp.run(['pgrep','-x','postgres'],stdout=sp.DEVNULL).returncode == 0
+        os_check = ['--require-debian-13'] if a.require_debian_13 else []
         capture('preflight.txt','python3',str(a.bundle/'benchmark-preflight.py'),
-                '--cpus','1','--min-mem-kib','440001','--max-mem-kib','524287')
+                '--cpus','1','--min-mem-kib','440001','--max-mem-kib','524287',*os_check)
         mem = Path('/proc/meminfo').read_text()
         assert int(next(x.split()[1] for x in mem.splitlines() if x.startswith('SwapTotal:'))) == 0
         assert os.cpu_count() == 1

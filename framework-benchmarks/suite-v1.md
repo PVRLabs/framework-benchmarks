@@ -7,7 +7,7 @@ contains the earlier three-candidate comparison using historical prices.
 
 Follow the [v1 protocol](protocol-v1.md) for JVM flags, PostgreSQL settings,
 pool cap, phases, traffic, sampling, and acceptance criteria. All four
-candidates run sequentially on one Linux QEMU/KVM Ubuntu guest with one vCPU,
+candidates run sequentially on one Linux QEMU/KVM Debian 13 guest with one vCPU,
 512 MiB, no swap, PostgreSQL 18.7 and OpenJDK HotSpot 27+35-2325.
 
 ## Prepare on the Linux host
@@ -17,9 +17,22 @@ all four packages fresh on Linux and run the shared PostgreSQL verifier for each
 Confirm that the exact PostgreSQL package and JDK are installed:
 
 ```sh
-test "$(tools/vm.sh exec fb-512 dpkg-query -W -f='${Version}' postgresql-18)" = 18.7-1.pgdg24.04+2
-tools/vm.sh exec fb-512 /opt/boot27/bin/java -version
+test "$(tools/vm.sh exec fb-debian-v1 dpkg-query -W -f='${Version}' postgresql-18)" = 18.7-1.pgdg13+5
+tools/vm.sh exec fb-debian-v1 /opt/boot27/bin/java -version
 ```
+
+With the database and applications stopped, run preflight and the 30-second
+idle sampler. Repeat across two boots and retain both outputs.
+
+```sh
+tools/vm.sh exec fb-debian-v1 sudo python3 /tmp/fb-setup/benchmark-preflight.py \
+  --require-debian-13 --cpus 1 --min-mem-kib 440001 --max-mem-kib 524287
+tools/vm.sh exec fb-debian-v1 bash -s < framework-benchmarks/scripts/sample-idle-guest.sh
+```
+
+Review MemAvailable, memory PSI, direct reclaim, allocation stalls and OOM
+counter deltas. Verify the deployed bundle hashes and stopped processes after
+preparation, then regenerate the report and compare it byte for byte.
 
 Prepare local bundles and choose a fresh guest release prefix. The commands
 below use `work/bundles` and `/tmp/fb-v1-review`.
@@ -36,14 +49,14 @@ mv work/bundles/spring-boot/{market-replay-portfolio-0.1.0-SNAPSHOT,application}
 
 for candidate in jex-coilbase quarkus-coilbase spring-boot micronaut-data-jdbc; do
   cp framework-benchmarks/scripts/colocated-guest.py tools/benchmark-preflight.py "work/bundles/$candidate/"
-  tools/prepare.sh fb-512 "work/bundles/$candidate" "/tmp/fb-v1-review/$candidate" "work/capture-$candidate"
+  tools/prepare.sh fb-debian-v1 "work/bundles/$candidate" "/tmp/fb-v1-review/$candidate" "work/capture-$candidate"
 done
 ```
 
 Stop the correctness tunnel once finished. Smoke both rounds with short windows:
 
 ```sh
-python3 framework-benchmarks/scripts/colocated-suite.py run --vm fb-512 \
+python3 framework-benchmarks/scripts/colocated-suite.py run --vm fb-debian-v1 \
   --protocol v1 --preparation --output work/v1-preparation \
   --bundle jex-coilbase=/tmp/fb-v1-review/jex-coilbase \
   --bundle quarkus-coilbase=/tmp/fb-v1-review/quarkus-coilbase \

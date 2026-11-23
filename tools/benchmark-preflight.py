@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Read-only Ubuntu benchmark guest preflight; run after provisioning and before baseline."""
+"""Read-only Debian and Ubuntu benchmark guest preflight; run after provisioning and before baseline."""
 import argparse
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -10,7 +11,13 @@ p = argparse.ArgumentParser()
 p.add_argument('--cpus', type=int, required=True)
 p.add_argument('--min-mem-kib', type=int, required=True)
 p.add_argument('--max-mem-kib', type=int, required=True)
+p.add_argument('--require-debian-13', action='store_true')
 a = p.parse_args()
+os_release = dict(line.split('=', 1) for line in Path('/etc/os-release').read_text().splitlines() if '=' in line)
+if a.require_debian_13 and (os_release.get('ID') != 'debian' or
+                            os_release.get('VERSION_ID', '').strip('"') != '13'):
+    sys.exit('PREFLIGHT: FAILED: expected Debian 13, found ' +
+             os_release.get('PRETTY_NAME', 'unknown OS'))
 errors = []
 
 def check(*cmd):
@@ -21,7 +28,8 @@ def check(*cmd):
 for timer in ('apt-daily.timer', 'apt-daily-upgrade.timer'):
     active = check('systemctl', 'is-active', timer)
     enabled = check('systemctl', 'is-enabled', timer)
-    if active.stdout.strip() != 'inactive' or enabled.stdout.strip() not in ('disabled', 'masked'):
+    state, policy = active.stdout.strip(), enabled.stdout.strip()
+    if policy not in ('disabled', 'masked') or (state != 'inactive' and (state, policy) != ('failed', 'masked')):
         errors.append(timer + ' is not inactive and disabled')
 for service in ('apt-daily.service', 'apt-daily-upgrade.service'):
     result = check('systemctl', 'is-active', service)
@@ -50,5 +58,46 @@ check('uname', '-a')
 print(Path('/etc/os-release').read_text())
 if check('dpkg-query', '-W', '-f=${binary:Package}\t${Version}\t${db:Status-Abbrev}\n').returncode:
     errors.append('package inventory failed')
+if os_release.get('ID') == 'debian':
+    if os_release.get('VERSION_ID', '').strip('"') != '13':
+        errors.append('expected Debian 13')
+    for package in ('postgresql-18', 'postgresql-client-18', 'python3-psycopg2', 'cloud-init', 'openssh-server'):
+        result = check('dpkg-query', '-W', '-f=${db:Status-Status} ${Version}', package)
+        if result.returncode or not result.stdout.startswith('installed '):
+            errors.append('missing package: ' + package)
+        elif package.startswith('postgresql-') and not result.stdout.startswith('installed 18.7-'):
+            errors.append('expected PostgreSQL 18.7: ' + package)
+    java = check('/opt/boot27/bin/java', '-version')
+    if java.returncode or '27+35-2325' not in java.stdout:
+        errors.append('unexpected OpenJDK build')
+    periodic = check('apt-config', 'shell', 'PERIODIC', 'APT::Periodic::Enable')
+    if periodic.returncode or periodic.stdout.strip() != "PERIODIC='0'":
+        errors.append('APT periodic maintenance is enabled')
+    # The harness itself runs as a transient service during this check.
+    own_unit = Path('/proc/self/cgroup').read_text().splitlines()[0].rsplit('/', 1)[-1]
+    allowed = {
+        'cloud-config.service', 'cloud-final.service', 'cloud-init.service',
+        'cloud-init-local.service', 'cloud-init-main.service', 'cloud-init-network.service',
+        'dbus.service', 'getty@tty1.service', 'serial-getty@ttyS0.service', 'serial-getty@hvc0.service',
+        'ssh.service', 'systemd-journald.service', 'systemd-logind.service',
+        'systemd-networkd.service', 'systemd-resolved.service',
+        # Environment capture queries timedatectl immediately before launch.
+        'systemd-timedated.service', 'systemd-timesyncd.service', 'systemd-udevd.service', 'systemd-userdbd.service',
+    }
+    if re.fullmatch(r'fb-smoke-[0-9a-f]{32}\.service', own_unit):
+        allowed.add(own_unit)
+    for kind in ('service', 'timer'):
+        units = check('systemctl', 'list-units', '--type='+kind, '--state=running,waiting',
+                      '--plain', '--no-legend', '--no-pager')
+        if units.returncode:
+            errors.append('cannot enumerate active ' + kind + ' units')
+        for row in units.stdout.splitlines():
+            unit = row.split()[0]
+            if unit not in allowed and not (kind == 'service' and unit.startswith('user@')):
+                errors.append('unexpected active unit: ' + unit)
+    check('systemctl', 'list-timers', '--all', '--no-pager')
+    check('ps', '-eo', 'pid,ppid,comm,rss,time,args', '--sort=-rss')
+    for name in ('/proc/pressure/memory', '/proc/meminfo'):
+        print(name, Path(name).read_text())
 print('PREFLIGHT:', 'FAILED: ' + '; '.join(errors) if errors else 'PASS')
 sys.exit(bool(errors))

@@ -1,10 +1,9 @@
-# Pinned Ubuntu image for preparation and measured execution.
-# x86_64 Linux host using QEMU/KVM.
+# Official Debian 13 genericcloud image for v1.
 minimumLimaVersion: 2.2.0
 images:
-  - location: https://cloud-images.ubuntu.com/releases/noble/release-20260705/ubuntu-24.04-server-cloudimg-amd64.img
-    arch: x86_64
-    digest: sha256:ffe6203da54deeb6db5d2a98a83f9ec8e55f149d3f7ba622e1abe5fa966ee3d6
+  - location: "https://cloud.debian.org/images/cloud/trixie/20260712-2537/debian-13-genericcloud-amd64-20260712-2537.qcow2"
+    arch: "x86_64"
+    digest: "sha512:7ae53e9dbee282bfc16f289dec483dde3a8598769c38a267948310f7a2a52c662620198603bc52c142627efba379863d16079698a10b34102d55bcedd40e8d32"
 vmType: qemu
 arch: x86_64
 plain: true

@@ -551,6 +551,8 @@ def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-m
                     '--warmup-seconds', str(settings['warmup_seconds']),
                     '--duration-seconds', str(settings['sustained_seconds']),
                     '--rate', str(settings['sustained_rate']), '--workers', str(settings['workers'])]
+            if version == 'v1':
+                args.append('--require-debian-13')
             if preparation:
                 args.append('--preparation')
             candidate['execution'] = 'running'

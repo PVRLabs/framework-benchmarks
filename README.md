@@ -121,18 +121,20 @@ generated offline report byte for byte with the accepted HTML.
 ### VM setup
 
 Use an x86-64 Linux host with working `/dev/kvm`, QEMU, Lima 2.2+, OpenSSH,
-Python 3, Bash and standard archive and checksum tools. The pinned Ubuntu image
-allocates one vCPU and 512 MiB. Setup disables swap and update timers, installs
-PostgreSQL 18, and verifies the pinned OpenJDK archive before extraction.
+Python 3, Bash and standard archive and checksum tools. The pinned official Debian 13 genericcloud image
+allocates one vCPU and 512 MiB. Lima verifies the image against the pinned
+SHA-512 from the [Debian manifest](https://cloud.debian.org/images/cloud/trixie/20260712-2537/SHA512SUMS).
+Setup disables swap, masks scheduled package and firmware maintenance,
+installs PostgreSQL 18.7, and verifies the pinned OpenJDK archive.
 
 ```sh
-tools/vm.sh create fb-512 framework-benchmarks/vm-linux.yaml
-tools/vm.sh start fb-512
+tools/vm.sh create fb-debian-v1 framework-benchmarks/vm-linux.yaml
+tools/vm.sh start fb-debian-v1
 curl -fL -o fb-jdk.tar.gz https://download.java.net/java/GA/jdk27/55ce5470a6294008af0057ff4626d0e5/35/GPL/openjdk-27_linux-x64_bin.tar.gz
 printf '%s  %s\n' 95fc37eb3a18a27a26d5904c2d89d52bace8dafa9a078ca27f4747fbc4bf070b fb-jdk.tar.gz | sha256sum -c -
-tools/vm.sh put fb-512 fb-jdk.tar.gz /tmp/fb-jdk.tar.gz
-tools/vm.sh put fb-512 framework-benchmarks/scripts /tmp/fb-setup
-tools/vm.sh exec fb-512 sudo bash /tmp/fb-setup/setup-vm.sh
+tools/vm.sh put fb-debian-v1 fb-jdk.tar.gz /tmp/fb-jdk.tar.gz
+tools/vm.sh put fb-debian-v1 framework-benchmarks/scripts /tmp/fb-setup
+tools/vm.sh exec fb-debian-v1 sudo bash /tmp/fb-setup/setup-vm.sh
 ```
 
 The v1 PostgreSQL profile adapts Theory A from the
@@ -149,18 +151,18 @@ tables and temporarily change its availability. Start PostgreSQL and leave
 the SSH tunnel running in a separate terminal:
 
 ```sh
-tools/vm.sh exec fb-512 sudo systemctl start postgresql@18-main
-tools/vm.sh tunnel fb-512 15432 5432
+tools/vm.sh exec fb-debian-v1 sudo systemctl start postgresql@18-main
+tools/vm.sh tunnel fb-debian-v1 15432 5432
 ```
 
 Run the checks sequentially, with a new output path each time:
 
 ```sh
-python3 framework-benchmarks/scripts/verify-postgres.py --output work/spring
-python3 framework-benchmarks/scripts/verify-postgres.py --quarkus --output work/quarkus
-python3 framework-benchmarks/scripts/verify-postgres.py --jex --output work/jex
-python3 framework-benchmarks/scripts/verify-postgres.py --micronaut --output work/micronaut
-tools/vm.sh exec fb-512 sudo systemctl stop postgresql@18-main
+python3 framework-benchmarks/scripts/verify-postgres.py --vm fb-debian-v1 --output work/spring
+python3 framework-benchmarks/scripts/verify-postgres.py --vm fb-debian-v1 --quarkus --output work/quarkus
+python3 framework-benchmarks/scripts/verify-postgres.py --vm fb-debian-v1 --jex --output work/jex
+python3 framework-benchmarks/scripts/verify-postgres.py --vm fb-debian-v1 --micronaut --output work/micronaut
+tools/vm.sh exec fb-debian-v1 sudo systemctl stop postgresql@18-main
 ```
 
 ### Benchmark execution
