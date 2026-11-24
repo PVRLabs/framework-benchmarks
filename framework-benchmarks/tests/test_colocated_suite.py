@@ -1,4 +1,5 @@
 """Deterministic suite and offline report checks."""
+import hashlib
 import importlib
 import importlib.util
 import json
@@ -20,6 +21,82 @@ def write(path, data):
 
 
 class SuiteTest(unittest.TestCase):
+    def test_configuration_loading_and_validation(self):
+        config = suite.benchmark_config
+        defaults = config.load()
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp)/'custom.json'
+            with self.assertRaisesRegex(ValueError, 'custom.json'):
+                config.load(path)
+            write(path, '{')
+            with self.assertRaisesRegex(ValueError, 'custom.json'):
+                config.load(path)
+            for override in (dict(typo=1), dict(jvm='-Xmx80m'), dict(jvm=['-jar']),
+                             dict(light_rate=True), dict(sustained_seconds=1),
+                             dict(java_executable='java'), dict(jdk_build='')):
+                with self.subTest(override=override):
+                    write(path, dict(defaults, **override))
+                    with self.assertRaises(ValueError):
+                        config.load(path)
+            write(path, dict(defaults, jvm=['-Xmx100m']))
+            self.assertEqual(config.load(path)['jvm'], ['-Xmx100m'])
+
+    def test_jvm_configuration_classification_hash_and_regeneration(self):
+        config = suite.benchmark_config
+        custom = dict(config.STANDARD, java_executable='/opt/other/bin/java',
+                      jdk_build='25+1', jvm=['-Xmx90m'])
+        bundles = {key: '/'+key for key in suite.FOUR_CANDIDATE_STACKS}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            default = root/'fork-default.json'
+            explicit = root/'unchanged.json'
+            write(default, custom)
+            write(explicit, config.STANDARD)
+            with patch.object(config, 'DEFAULT_PATH', default), \
+                 patch.object(suite.platform, 'system', return_value='Linux'), \
+                 patch.object(suite, 'verify_guest_storage'), \
+                 patch.object(suite.runner, 'main', return_value=True) as runner:
+                for name, preparation, path, expected_id, expected_config in (
+                    ('custom', False, None, 'v1-custom', custom),
+                    ('custom-prep', True, None, 'v1-custom-preparation', custom),
+                    ('standard', False, explicit, 'v1', config.STANDARD),
+                    ('standard-prep', True, explicit, 'v1-preparation', config.STANDARD),
+                ):
+                    with self.subTest(name=name):
+                        runner.reset_mock()
+                        self.assertTrue(suite.run_suite(root/name, bundles, 'vm', '/runs',
+                                                       preparation, 'v1', path))
+                        recorded = suite.read_json(root/name/'suite.json')
+                        self.assertEqual(recorded['protocol']['id'], expected_id)
+                        encoded = json.dumps(expected_config, sort_keys=True, separators=(',', ':')).encode()
+                        self.assertEqual(recorded['configuration_sha256'], hashlib.sha256(encoded).hexdigest())
+                        self.assertEqual(runner.call_count, 8)
+                        for call in runner.call_args_list:
+                            self.assertEqual(call.kwargs['jvm_config'], expected_config)
+
+            default.unlink()
+            explicit.unlink()
+            manifest = root/'custom/suite.json'
+            original = manifest.read_bytes()
+            report = root/'custom/report.html'
+            original_html = report.read_bytes()
+            with patch.object(config, 'load', side_effect=AssertionError('configuration opened')):
+                suite.regenerate(manifest)
+            self.assertIn(b'Custom experiment', original_html)
+            self.assertEqual(report.read_bytes(), original_html)
+            for field, value, message in (
+                ('warmup_seconds', 124, 'Manifest settings differ from protocol v1'),
+                ('jvm', ['-Xmx91m'], 'JVM configuration hash mismatch'),
+                ('configuration_sha256', '0'*64, 'JVM configuration hash mismatch'),
+            ):
+                with self.subTest(field=field):
+                    tampered = json.loads(original)
+                    target = tampered if field == 'configuration_sha256' else tampered['protocol']
+                    target[field] = value
+                    write(manifest, tampered)
+                    with self.assertRaisesRegex(ValueError, message):
+                        suite.regenerate(manifest)
+
     def test_regeneration_revalidates_raw_latency(self):
         spec = importlib.util.spec_from_file_location(
             'portfolio_workload', suite.runner.ROOT/'market-replay-portfolio/workload/run.py')
@@ -115,27 +192,30 @@ class SuiteTest(unittest.TestCase):
             self.assertEqual((output/'report.html').read_text(), html)
             self.assertEqual(manifest.read_bytes(), original_manifest)
 
-    def test_v1_rounds_use_frozen_settings_and_unique_evidence(self):
+    def test_v1_rounds_use_frozen_timing_and_unique_evidence(self):
         roster = ('jex-coilbase', 'quarkus-coilbase', 'spring-boot', 'micronaut-data-jdbc')
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp)/'v1'
             expected = [(number, key) for number in (1, 2) for key in roster]
             calls = []
 
-            def run_candidate(args):
-                options = dict(zip(args[::2], args[1::2]))
+            def run_candidate(args, *, jvm_config):
+                options = dict(zip(args[:-1:2], args[1:-1:2]))
                 evidence = Path(options['--output'])
                 calls.append((evidence.parent.name, options['--candidate']))
                 self.assertEqual(options['--guest-run-root'], f'/runs/v1/{evidence.parent.name}')
                 self.assertEqual(options['--suite-light-seconds'], '30')
                 self.assertEqual(options['--warmup-seconds'], '125')
                 self.assertEqual(options['--duration-seconds'], '185')
+                self.assertEqual(options['--rate'], '40')
+                self.assertEqual(options['--workers'], '8')
                 write(evidence/'run.json', dict(status='failed', errors=[]))
                 return True
 
             with patch.object(suite.platform, 'node', return_value='benchmark-host'), \
                  patch.object(suite.platform, 'system', return_value='Linux'), \
                  patch.object(suite.runner, 'main', side_effect=run_candidate), \
+                 patch.object(suite.benchmark_config, 'load', return_value=suite.benchmark_config.STANDARD), \
                  patch.object(suite, 'verify_guest_storage') as verify_storage:
                 self.assertTrue(suite.run_suite(output, {key: '/'+key for key in roster},
                                                 'vm', '/runs', version='v1'))
@@ -145,7 +225,8 @@ class SuiteTest(unittest.TestCase):
             original = manifest.read_bytes()
             html = (output/'report.html').read_bytes()
             (output/'featured.svg').write_text('stale chart')
-            with patch.object(suite.runner, 'main', side_effect=AssertionError('benchmark launched')):
+            with patch.object(suite.runner, 'main', side_effect=AssertionError('benchmark launched')), \
+                 patch.object(suite.benchmark_config, 'load', side_effect=AssertionError('configuration opened')):
                 recorded = suite.regenerate(manifest)
             self.assertEqual([(c['round'], c['id']) for c in recorded['candidates']], expected)
             self.assertEqual(manifest.read_bytes(), original)
@@ -164,7 +245,7 @@ class SuiteTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Unexpected protocol v1 evidence directory'):
                 suite.regenerate(manifest)
             recorded = json.loads(original)
-            recorded['protocol']['warmup_seconds'] = 15
+            recorded['protocol']['workers'] = 15
             write(manifest, recorded)
             with self.assertRaisesRegex(ValueError, 'Manifest settings differ from protocol v1'):
                 suite.regenerate(manifest)

@@ -118,6 +118,17 @@ jobs:
         run: |
           python3 framework-benchmarks/scripts/verify-postgres.py --local --micronaut \
             --output "$RUNNER_TEMP/micronaut-correctness"
+      - name: Check frozen upstream v1 JVM defaults
+        if: github.repository == 'PVRLabs/framework-benchmarks' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          PYTHONPATH: framework-benchmarks/scripts
+        run: |
+          python3 - <<'PY'
+          import benchmark_config
+
+          if benchmark_config.load() != benchmark_config.STANDARD:
+              raise SystemExit('Upstream config-v1.json must match the frozen v1 JVM settings')
+          PY
       - name: Test Python fixture, workload, and harness
         run: |
           python3 -m unittest discover -s market-replay-portfolio/fixture/tests

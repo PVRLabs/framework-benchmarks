@@ -1,0 +1,5 @@
+{
+  "java_executable": "/opt/boot27/bin/java",
+  "jdk_build": "27+35-2325",
+  "jvm": ["-Xms16m", "-Xmx80m", "-XX:+UseG1GC", "-Duser.timezone=UTC"]
+}

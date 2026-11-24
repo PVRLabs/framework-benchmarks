@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Host orchestration; bundle must contain complete candidate runtime + guest script."""
 import argparse
+import base64
 import json
 import hashlib
 import math
@@ -12,6 +13,8 @@ import sys
 import time
 import urllib.request
 import uuid
+
+from benchmark_config import STANDARD
 
 ROOT = Path(__file__).resolve().parents[2]
 VM = ROOT/'tools/vm.sh'
@@ -227,7 +230,7 @@ def run_load_guest(command, output, seconds, rate, workers, warmup, log, suite_l
             raise
 
 
-def main(argv=None):
+def main(argv=None, *, jvm_config=STANDARD):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--vm',default='fb-512')
     p.add_argument('--bundle',required=True)
@@ -256,6 +259,9 @@ def main(argv=None):
         p.error('rate, warm-up and workers require --duration-seconds')
     seconds = a.light_seconds or a.duration_seconds
     rate = 5 if a.light_seconds else a.rate
+    # Keep the payload a single shell-safe argument across Lima and systemd-run.
+    java = json.dumps([jvm_config['java_executable'], *jvm_config['jvm']])
+    java_command = base64.urlsafe_b64encode(java.encode()).decode()
     a.output.mkdir(parents=True,exist_ok=False)
     guest = str(Path(a.guest_run_root)/a.output.name)
     processes, errors, logs = [], [], []
@@ -301,7 +307,7 @@ def main(argv=None):
                    '--unit='+unit,'--collect','--wait','--service-type=exec',
                    '--property=KillMode=mixed','--property=TimeoutStopSec=30s',
                    'python3',a.bundle+'/colocated-guest.py','--bundle',a.bundle,
-                   '--output',guest,'--candidate',a.candidate]
+                   '--output',guest,'--candidate',a.candidate,'--java-command='+java_command]
         if a.failure_probe: command += ['--fixture-url','http://127.0.0.1:1/quotes']
         if a.require_debian_13:
             command.append('--require-debian-13')

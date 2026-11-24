@@ -1,9 +1,11 @@
 """Host-loss cleanup regression checks; no VM or workload required."""
+import base64
 import importlib.util
 import io
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
@@ -11,10 +13,31 @@ from unittest.mock import Mock, patch
 SPEC = importlib.util.spec_from_file_location('colocated_run',
     Path(__file__).resolve().parents[1]/'scripts/colocated-run.py')
 runner = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(runner)
+with patch.object(sys, 'path', [str(Path(SPEC.origin).parent), *sys.path]):
+    SPEC.loader.exec_module(runner)
 
 
 class HostCleanupTest(unittest.TestCase):
+    def test_jvm_settings_reach_guest_command(self):
+        settings = dict(java_executable='/opt/alternate JDK/bin/java',
+                        jdk_build='27+35-2325', jvm=['-Xmx90m', '-Dexample=two words'])
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)/'run'
+            with patch.object(runner.sp, 'run', return_value=Mock(stdout='/tmp/ssh.config\n')), \
+                 patch.object(runner.sp, 'Popen', return_value=Mock(poll=Mock(return_value=None))), \
+                 patch.object(runner.time, 'sleep'), \
+                 patch.object(runner.urllib.request, 'urlopen'), \
+                 patch.object(runner, 'run_load_guest') as load:
+                self.assertFalse(runner.main(['--bundle', '/bundle', '--output', str(output),
+                                              '--candidate', 'micronaut-data-jdbc', '--suite-light-seconds', '30',
+                                              '--duration-seconds', '185', '--warmup-seconds', '125',
+                                              '--rate', '40'], jvm_config=settings))
+            command, _, seconds, rate, workers, warmup, _, light = load.call_args.args
+            self.assertEqual((seconds, rate, workers, warmup, light), (185, 40, 8, 125, 30))
+            encoded = next(arg.split('=', 1)[1] for arg in command if arg.startswith('--java-command='))
+            self.assertEqual(json.loads(base64.urlsafe_b64decode(encoded)),
+                             [settings['java_executable'], *settings['jvm']])
+
     def load_evidence(self, config, first_outcome='success'):
         spec = importlib.util.spec_from_file_location(
             'portfolio_workload', runner.ROOT/'market-replay-portfolio/workload/run.py')

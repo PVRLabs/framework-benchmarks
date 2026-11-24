@@ -61,6 +61,14 @@ client scheduling and SSH transport.
 | Spring Boot + JDBC | Spring Boot 4.1.1, Tomcat 11.0.24 | Spring JDBC 7.0.9 | HikariCP 7.0.2 | 42.7.13 | [R1](framework-benchmarks/evidence/debian-v1/round-01/spring-boot/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/spring-boot/environment/artifacts.txt) |
 | Micronaut Data JDBC | Micronaut HTTP Server Netty 5.2.11 | Micronaut Data JDBC 5.2.0 | Micronaut JDBC Hikari 7.2.0, HikariCP 7.1.0 | 42.7.13 | [R1](framework-benchmarks/evidence/debian-v1/round-01/micronaut-data-jdbc/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/micronaut-data-jdbc/environment/artifacts.txt) |
 
+### Try your own JVM settings
+
+Fork the repository, customize the JVM settings, and run the same benchmark
+protocol. Share your configuration and results in a GitHub issue or pull request.
+
+[Fork this repository](https://github.com/PVRLabs/framework-benchmarks/fork) ·
+[Custom runs guide](framework-benchmarks/custom-runs.md)
+
 ### Why CoilBase instead of Hibernate in Quarkus?
 
 Spring Boot + Spring JDBC is the reference implementation. This benchmark
@@ -189,7 +197,8 @@ tools/vm.sh exec fb-debian-v1 sudo systemctl stop postgresql@18-main
 
 Use the [v1 suite guide](framework-benchmarks/suite-v1.md) to prepare and run all
 four candidates on a dedicated Linux QEMU/KVM host. Keep new work under fresh
-paths in `work/`. The pre-release suite and report are archived under
+paths in `work/`. See [Customize JVM settings](framework-benchmarks/custom-runs.md)
+to compare JVM configurations. The pre-release suite and report are archived under
 `framework-benchmarks/evidence/v1-accepted/`.
 
 ### Regenerate the featured report and chart

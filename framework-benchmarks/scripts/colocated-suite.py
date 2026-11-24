@@ -14,6 +14,8 @@ import signal
 import subprocess
 from urllib.parse import quote
 
+import benchmark_config
+
 runner = importlib.import_module('colocated-run')
 memory = importlib.import_module('colocated-summary')
 
@@ -37,9 +39,10 @@ ROSTER_ERROR = 'Expected exactly one bundle or manifest entry for each of: ' + '
 MAX_SAMPLE_GAP_SECONDS = 3
 
 
-def protocol(preparation=False, version='3.4-mvp', *, archived=False):
+def protocol(preparation=False, version='3.4-mvp', *, archived=False, config=None):
+    values = benchmark_config.STANDARD if config is None else config
     settings = dict(id='3.4-mvp-preparation' if preparation else '3.4-mvp',
-                jvm=['-Xms16m', '-Xmx80m', '-XX:+UseG1GC', '-Duser.timezone=UTC'],
+                jvm=list(values['jvm']),
                 guest='QEMU/KVM, 1 vCPU, 512 MiB allocated, zero swap',
                 postgres=POSTGRES, pool_max=4, quote_poll_seconds=60,
                 replay_step_seconds=3600, stabilize_seconds=1 if preparation else 10,
@@ -51,12 +54,15 @@ def protocol(preparation=False, version='3.4-mvp', *, archived=False):
                 sample_window_markers=True,
                 operations=dict(portfolio=40, edit=25, valuation=25, latest=8, history=2))
     if version == 'v1':
-        settings.update(id=version + ('-preparation' if preparation else ''),
+        protocol_id = 'v1' if values == benchmark_config.STANDARD else 'v1-custom'
+        settings.update(id=protocol_id + ('-preparation' if preparation else ''),
                         rounds=2, warmup_seconds=3 if preparation else 125,
                         sustained_seconds=3 if preparation else 185,
-                        jdk_build='27+35-2325', timeout_seconds=5)
-    if version == 'v1' and not archived:
-        settings.update(fixture_sha256=PUBLIC_FIXTURE_SHA256, postgres_version='18.7')
+                        jdk_build=values['jdk_build'], timeout_seconds=5)
+        if not archived:
+            settings.update(fixture_sha256=PUBLIC_FIXTURE_SHA256, postgres_version='18.7')
+        if config is not None:
+            settings['java_executable'] = values['java_executable']
     return settings
 
 
@@ -256,9 +262,17 @@ def inspect_candidate(root, candidate, settings):
         check(vm['vmType'] == 'qemu' and vm['cpus'] == 1 and vm['memory'] == 512*1024**2
               and any('KVM' in line for line in guest_env if line.startswith('Hypervisor vendor:'))
               and runtime['Guest swap'].split()[1:] == ['0', '0', '0'], 'Unexpected guest configuration')
-        check(runtime['JDK'].startswith('openjdk version "27"'), 'Unexpected JDK')
+        custom = settings['id'].startswith('v1-custom')
+        if not custom:
+            check(runtime['JDK'].startswith('openjdk version "27"'), 'Unexpected JDK')
         if 'jdk_build' in settings:
-            check(f"build {settings['jdk_build']})" in runtime['JDK'], 'Unexpected JDK build')
+            build = settings['jdk_build']
+            matches = (re.search(r'\bbuild ' + re.escape(build) + r'(?=[,)])', runtime['JDK'])
+                       if custom else f'build {build})' in runtime['JDK'])
+            check(matches, 'Unexpected JDK build')
+        if 'java_executable' in settings:
+            check(launch['command'][:1+len(settings['jvm'])] ==
+                  [settings['java_executable'], *settings['jvm']], 'Java launch differs from the suite configuration')
         check(pg['server_version'].startswith('18.'), 'Unexpected PostgreSQL major version')
         if 'fixture_sha256' in settings:
             check(pg['server_version'].split()[0] == settings['postgres_version'], 'Unexpected PostgreSQL version')
@@ -344,6 +358,10 @@ def render(suite, root):
                        'Protocol v1 with synthetic market prices. ')
         introduction = description + ('Two rounds with shortened smoke windows.' if settings['id'].endswith('-preparation')
                            else 'Two sequential rounds per candidate.')
+    if settings['id'].startswith('v1-custom'):
+        introduction = ('Custom experiment using v1 methodology and synthetic market prices. '
+                        + ('Two rounds with shortened smoke windows.' if settings['id'].endswith('-preparation')
+                           else 'Two sequential rounds per candidate.'))
     limitation = ('' if versioned else
                   'Long-window stability, repeatability, and final 512 MiB feasibility remain open.\n')
     parts = [f"""<!doctype html>
@@ -502,7 +520,9 @@ def featured_svg(suite):
     os_name = 'Debian 13' if debian else 'Ubuntu' if ubuntu else 'Linux'
     postgres = settings.get('postgres_version') or '18'
     rounds = settings.get('rounds', 1)
-    subtitle = f'{os_name} · 1 vCPU · 512 MiB · PostgreSQL {postgres} · HotSpot 27'
+    runtime = (f"Custom v1 · {suite['configuration_sha256'][:12]}"
+               if settings['id'] == 'v1-custom' else 'HotSpot 27')
+    subtitle = f'{os_name} · 1 vCPU · 512 MiB · PostgreSQL {postgres} · {runtime}'
     subtitle += f" · {settings['sustained_rate']:g} RPS sustained"
     colors = ('#176b76', '#6844a5')
     parts = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" '
@@ -554,14 +574,23 @@ def regenerate(path, refresh=False):
     protocol_id = settings.get('id')
     version = (protocol_id or '').removesuffix('-preparation')
     synthetic = 'fixture_sha256' in settings
-    versioned = version in ('v1', 'v1-four-candidate')
+    versioned = version in ('v1', 'v1-four-candidate', 'v1-custom')
+    config = None
+    if 'java_executable' in settings or 'configuration_sha256' in suite or version == 'v1-custom':
+        config = benchmark_config.validate({key: settings[key] for key in benchmark_config.STANDARD
+                                            if key in settings})
+    if 'configuration_sha256' in suite or version == 'v1-custom':
+        check(suite.get('configuration_sha256') == benchmark_config.sha256(config),
+              'JVM configuration hash mismatch')
     if versioned:
         # The pre-release archive used v1 without a fixture hash. Earlier
         # synthetic preparation evidence used a temporary manifest identifier.
         stacks = FOUR_CANDIDATE_STACKS if synthetic else STACKS
-        expected_settings = protocol(protocol_id.endswith('-preparation'), 'v1',
-                                     archived=version == 'v1' and not synthetic)
-        expected_settings['id'] = protocol_id
+        expected_settings = protocol(protocol_id.endswith('-preparation'),
+                                     'v1',
+                                     archived=version == 'v1' and not synthetic, config=config)
+        if version == 'v1-four-candidate' and config is None:
+            expected_settings['id'] = protocol_id
         check(settings == expected_settings, 'Manifest settings differ from protocol v1')
         roster = [(number, key) for number in range(1, settings['rounds']+1) for key in stacks]
         candidates = {(c.get('round'), c['id']): c for c in entries}
@@ -615,14 +644,18 @@ def verify_guest_storage(vm, guest_root):
           f'Found {filesystem or "no mount"}. Use /var/tmp/fb-runs on the Debian guest.')
 
 
-def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-mvp'):
+def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-mvp', config_path=None):
+    if config_path is not None:
+        version = 'v1'
     stacks = FOUR_CANDIDATE_STACKS if version == 'v1' else STACKS
     check(bundles.keys() == stacks.keys(), 'Expected exactly one bundle for each of: ' + ', '.join(stacks))
     if version == 'v1':
         fixture = runner.FIXTURE/'data/quotes-2026-09-30.csv'
         check(hashlib.sha256(fixture.read_bytes()).hexdigest() == PUBLIC_FIXTURE_SHA256,
               'The v1 suite requires the public synthetic replay fixture')
-    settings = protocol(preparation, version)
+    config = benchmark_config.load(config_path) if config_path is not None else (
+        benchmark_config.load() if version == 'v1' else None)
+    settings = protocol(preparation, version, config=config)
     host = platform.node()
     check(platform.system() == 'Linux', 'Run the suite on a Linux host')
     if version == 'v1':
@@ -639,6 +672,8 @@ def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-m
     manifest = output/'suite.json'
     suite = dict(id=output.name, created_utc=datetime.now(timezone.utc).isoformat(),
                  host=host, vm=vm, protocol=settings, candidates=candidates, status='incomplete')
+    if config is not None:
+        suite['configuration_sha256'] = benchmark_config.sha256(config)
     persist(manifest, suite)
 
     def interrupted(signum, frame):
@@ -664,7 +699,7 @@ def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-m
             persist(manifest, suite)
             print(f'Running {candidate_label(candidate)}', flush=True)
             try:
-                failed = runner.main(args)
+                failed = runner.main(args, jvm_config=config) if config is not None else runner.main(args)
                 status_path = output/evidence/'run.json'
                 if status_path.exists() and read_json(status_path).get('interrupted'):
                     candidate['execution'] = 'interrupted'
@@ -697,6 +732,7 @@ def main():
     run.add_argument('--guest-run-root', default='/var/tmp/fb-runs')
     run.add_argument('--bundle', action='append', required=True, metavar='CANDIDATE=/GUEST/PATH')
     run.add_argument('--protocol', choices=('v1',), default='v1')
+    run.add_argument('--config', type=Path, help='JSON configuration for a custom v1 experiment')
     run.add_argument('--preparation', action='store_true')
     report = commands.add_parser('report')
     report.add_argument('manifest', type=Path)
@@ -718,7 +754,8 @@ def main():
     if bundles.keys() != stacks.keys():
         run.error('Expected exactly one bundle for each of: ' + ', '.join(stacks))
     try:
-        return run_suite(args.output, bundles, args.vm, args.guest_run_root, args.preparation, args.protocol)
+        return run_suite(args.output, bundles, args.vm, args.guest_run_root,
+                         args.preparation, args.protocol, args.config)
     except ValueError as exc:
         run.error(str(exc))
 

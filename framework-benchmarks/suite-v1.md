@@ -36,6 +36,9 @@ preparation, then regenerate the report and compare it byte for byte.
 
 Prepare local bundles and choose a fresh guest release prefix. The commands
 below use `work/bundles` and `/var/tmp/fb-v1-review`.
+Prepare and deploy existing bundles again with the updated
+`colocated-guest.py` under a fresh guest release prefix. The host runner now
+passes the Java command to that script.
 
 ```sh
 mkdir -p work/bundles/{jex-coilbase,quarkus-coilbase,micronaut-data-jdbc}
@@ -78,6 +81,9 @@ the 512 MiB guest and verifies it after a cold boot. The helper accepts the
 name of your benchmark VM if it differs.
 
 ## Run after review
+
+The suite reads [the v1 JVM defaults](config-v1.json) when run without
+`--config`. See [custom benchmark runs](custom-runs.md) for JVM experiments.
 
 Run the same suite command without `--preparation` and with a fresh output
 directory such as `--output work/v1-001`. This uses 30 seconds

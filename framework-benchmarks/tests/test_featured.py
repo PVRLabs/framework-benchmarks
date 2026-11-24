@@ -25,6 +25,12 @@ class FeaturedTest(unittest.TestCase):
         labels = [element.text for element in ElementTree.fromstring(svg).iter('{http://www.w3.org/2000/svg}text')]
         self.assertIn("App readiness (s)", labels)
         self.assertTrue(any("40 RPS sustained" in label for label in labels))
+        self.assertTrue(any("HotSpot 27" in label for label in labels))
+        custom = dict(suite.benchmark_config.STANDARD, jvm=['-Xmx90m'])
+        digest = suite.benchmark_config.sha256(custom)
+        custom_svg = suite.featured_svg(dict(data, protocol=suite.protocol(version='v1', config=custom),
+                                             configuration_sha256=digest))
+        self.assertIn(f'Custom v1 · {digest[:12]}', custom_svg)
         self.assertNotIn("Database readiness (s)", labels)
         for label in ('Jex + Jdbi', 'Quarkus + Jdbi', 'Spring Boot + JDBC', 'Micronaut Data JDBC'):
             self.assertEqual(labels.count(label), 4)

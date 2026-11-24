@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """One sequential startup/idle run; execute as root in the dedicated guest."""
 import argparse
+import base64
 from collections import Counter
 import json
 import os
@@ -12,8 +13,6 @@ import threading
 import time
 import urllib.request
 
-FLAGS = ['-Xms16m', '-Xmx80m', '-XX:+UseG1GC', '-Duser.timezone=UTC']
-
 def run(*args, **kw):
     return sp.run(args, check=True, text=True, **kw)
 
@@ -21,8 +20,9 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bundle', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
-    p.add_argument('--candidate', choices=['jex-coilbase', 'quarkus-coilbase', 'spring-boot'], default='jex-coilbase')
+    p.add_argument('--candidate', choices=['jex-coilbase', 'quarkus-coilbase', 'spring-boot', 'micronaut-data-jdbc'], default='jex-coilbase')
     p.add_argument('--fixture-url', default='http://127.0.0.1:8090/quotes')
+    p.add_argument('--java-command', required=True, help='encoded JVM command from the host runner')
     p.add_argument('--idle-seconds', type=int, default=30)
     p.add_argument('--stabilize-seconds', type=int, default=10)
     p.add_argument('--light-load', action='store_true')
@@ -31,6 +31,10 @@ def main():
     p.add_argument('--suite-light-seconds', type=int)
     p.add_argument('--require-debian-13', action='store_true')
     a = p.parse_args()
+    java, *flags = json.loads(base64.urlsafe_b64decode(a.java_command))
+    java_env = dict(os.environ)
+    for variable in ('JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS'):
+        java_env.pop(variable, None)
     a.output.mkdir(parents=True, exist_ok=False)
     out = a.output
     errors = []
@@ -41,9 +45,9 @@ def main():
     done = threading.Event()
     def save(name, obj):
         (out/name).write_text(json.dumps(obj, indent=2)+'\n')
-    def capture(name, *cmd):
+    def capture(name, *cmd, **kw):
         with (out/name).open('w') as f:
-            run(*cmd, stdout=f, stderr=sp.STDOUT)
+            run(*cmd, stdout=f, stderr=sp.STDOUT, **kw)
     def sample():
         row = dict(epoch=time.time(), monotonic=time.monotonic(), phase=phase,
                    meminfo=Path('/proc/meminfo').read_text(), vmstat=Path('/proc/vmstat').read_text(), processes=[])
@@ -70,7 +74,7 @@ def main():
                 errors.append('sampler: '+repr(e))
                 done.set()
             done.wait(1)
-    summary = dict(candidate=a.candidate, flags=FLAGS, idle_seconds=a.idle_seconds,
+    summary = dict(candidate=a.candidate, flags=flags, idle_seconds=a.idle_seconds,
                    stabilize_seconds=a.stabilize_seconds, errors=errors)
     thread = None
     def interrupt(signum, frame):
@@ -106,8 +110,8 @@ def main():
         assert os.cpu_count() == 1
         assert 440000 < int(next(x.split()[1] for x in mem.splitlines() if x.startswith('MemTotal:'))) < 524288
         capture('environment.txt','bash','-c','uname -a; lscpu; free -k; cat /proc/swaps; cat /etc/os-release; df -h /')
-        capture('java.txt','/opt/boot27/bin/java','-version')
-        capture('effective-jvm-flags.txt','/opt/boot27/bin/java',*FLAGS,'-XX:+PrintFlagsFinal','-version')
+        capture('java.txt',java,'-version',env=java_env)
+        capture('effective-jvm-flags.txt',java,*flags,'-XX:+PrintFlagsFinal','-version',env=java_env)
         capture('kernel-before.log','journalctl','-k','--no-pager')
         capture('vmstat-before.txt','cat','/proc/vmstat')
         thread = threading.Thread(target=sampler)
@@ -127,9 +131,10 @@ def main():
                 "SELECT name,setting,unit,source FROM pg_settings ORDER BY name")
         phase = 'postgres-only'
         time.sleep(3)
-        jars = {'jex-coilbase':'portfolio-jex-coilbase.jar','quarkus-coilbase':'quarkus-app/quarkus-run.jar','spring-boot':'application.jar'}
-        command = ['/opt/boot27/bin/java',*FLAGS,'-Xlog:gc:file='+str(out/'gc.log'),'-jar',str(a.bundle/jars[a.candidate])]
-        env = dict(os.environ, SERVER_PORT='8080', MARKET_DB_URL='jdbc:postgresql://127.0.0.1:5432/fb_baseline',
+        jars = {'jex-coilbase':'portfolio-jex-coilbase.jar','quarkus-coilbase':'quarkus-app/quarkus-run.jar','spring-boot':'application.jar',
+                'micronaut-data-jdbc':'portfolio-micronaut-data-jdbc.jar'}
+        command = [java,*flags,'-Xlog:gc:file='+str(out/'gc.log'),'-jar',str(a.bundle/jars[a.candidate])]
+        env = dict(java_env, SERVER_PORT='8080', MARKET_DB_URL='jdbc:postgresql://127.0.0.1:5432/fb_baseline',
                    MARKET_DB_USER='fb_baseline', MARKET_DB_PASSWORD='fb_baseline', PORTFOLIO_SEED_USERS='1000',
                    MARKET_FIXTURE_URL=a.fixture_url, MARKET_POLL_ENABLED='true',
                    MARKET_POLL_INTERVAL_MS='60000', MARKET_POLL_INITIAL_DELAY_MS='0')
