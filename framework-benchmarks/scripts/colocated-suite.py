@@ -378,7 +378,7 @@ when independently verified. Charts include completed phases with verified envir
         ('light', 'app_rss_mib', 'Light-load peak app RSS (MiB)'),
         ('sustained', 'p99_ms', 'Sustained aggregate p99 (ms)'),
     ]:
-        parts.append(chart(candidates, phase, key, title))
+        parts.append(chart(candidates, phase, key, f'{title} · lower is better'))
     if versioned:
         parts.append('<h2>Sustained latency across rounds</h2><table><thead><tr>'
                      '<th scope="col">Candidate</th><th scope="col">p95 spread (ms)</th>'
@@ -492,10 +492,10 @@ def featured_svg(suite):
     runs = suite['candidates']
     keys = [key for key in LABELS if any(run['id'] == key for run in runs)]
     metrics = (
-        ('App readiness (s)', 'startup', 'ready_seconds'),
-        ('Sampled peak app RSS (MiB)', 'sustained', 'app_rss_mib'),
-        ('Sustained p99 latency (ms)', 'sustained', 'p99_ms'),
-        ('Min. guest MemAvailable (MiB)', 'sustained', 'available_mib'),
+        ('App readiness (s)', 'startup', 'ready_seconds', 'lower'),
+        ('Sampled peak app RSS (MiB)', 'sustained', 'app_rss_mib', 'lower'),
+        ('Sustained p99 latency (ms)', 'sustained', 'p99_ms', 'lower'),
+        ('Min. guest MemAvailable (MiB)', 'sustained', 'available_mib', 'higher'),
     )
     debian = all('Debian GNU/Linux 13' in run['runtime'].get('Guest', '') for run in runs)
     ubuntu = all('Ubuntu' in run['runtime'].get('Guest', '') for run in runs)
@@ -509,7 +509,8 @@ def featured_svg(suite):
              'role="img" aria-labelledby="title desc">',
              '<title id="title">Framework Benchmarks</title>',
              '<desc id="desc">Readiness, application RSS, latency and guest memory headroom '
-             'for each recorded run, with values next to the bars.</desc>',
+             'for each recorded run. Lower is better for readiness time, application RSS and latency. '
+             'Higher is better for guest memory headroom.</desc>',
              '<rect width="1200" height="760" fill="#f0f5fa"/>',
              '<g font-family="Arial, Helvetica, sans-serif" fill="#12283e">',
              '<text x="36" y="58" font-size="39" font-weight="700">Framework Benchmarks</text>',
@@ -518,10 +519,12 @@ def featured_svg(suite):
         x = 36 + index * 145
         parts.append(f'<rect x="{x}" y="114" width="20" height="20" fill="{colors[index]}"/>'
                      f'<text x="{x+30}" y="131" font-size="20">Round {index+1}</text>')
-    for index, (title, phase, metric) in enumerate(metrics):
+    for index, (title, phase, metric, direction) in enumerate(metrics):
         x, y = 36 + index % 2 * 574, 152 + index // 2 * 270
         parts.append(f'<rect x="{x}" y="{y}" width="554" height="254" rx="12" fill="white"/>'
-                     f'<text x="{x+20}" y="{y+34}" font-size="24" font-weight="700">{title}</text>')
+                     f'<text x="{x+20}" y="{y+34}" font-size="24" font-weight="700">{title}</text>'
+                     f'<text x="{x+534}" y="{y+34}" font-size="18" text-anchor="end">'
+                     f'{direction} is better</text>')
         scale = max(run['phases'][phase][metric] for run in runs) or 1
         for row, key in enumerate(keys):
             top = y + 52 + row * 48
