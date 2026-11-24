@@ -513,7 +513,7 @@ def featured_svg(suite):
         ('App readiness (s)', 'startup', 'ready_seconds', 'lower'),
         ('Sampled peak app RSS (MiB)', 'sustained', 'app_rss_mib', 'lower'),
         ('Sustained p99 latency (ms)', 'sustained', 'p99_ms', 'lower'),
-        ('Min. guest MemAvailable (MiB)', 'sustained', 'available_mib', 'higher'),
+        ('Min guest MemAvailable (MiB)', 'sustained', 'available_mib', 'higher'),
     )
     debian = all('Debian GNU/Linux 13' in run['runtime'].get('Guest', '') for run in runs)
     ubuntu = all('Ubuntu' in run['runtime'].get('Guest', '') for run in runs)

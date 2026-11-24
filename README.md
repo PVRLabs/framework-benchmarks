@@ -39,7 +39,7 @@ with zero workload errors, timeouts, unsent requests or OOM kills.
 
 ![Debian 13 v1 results for all four stacks, with separate bars for each round.](docs/featured-v1.svg)
 
-| Stack | Round | App readiness (s) | Peak app RSS (MiB) | Sustained p99 (ms) | Min. guest MemAvailable (MiB) |
+| Stack | Round | App readiness (s) | Peak app RSS (MiB) | Sustained p99 (ms) | Min guest MemAvailable (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Jex + Jdbi | 1 | 4.64 | 148.16 | 11.03 | 202.43 |
 | Quarkus + Jdbi | 1 | 5.93 | 200.23 | 11.26 | 150.56 |

@@ -37,7 +37,7 @@
 <text x="56" y="592" font-size="20">Spring Boot + JDBC</text>
 <rect x="274" y="570" width="224.86" height="14" fill="#176b76"/><text x="505.86" y="583" font-size="18">10.01</text>
 <rect x="274" y="590" width="229.00" height="14" fill="#6844a5"/><text x="510.00" y="603" font-size="18">10.19</text>
-<rect x="610" y="422" width="554" height="254" rx="12" fill="white"/><text x="630" y="456" font-size="24" font-weight="700">Min. guest MemAvailable (MiB)</text><text x="1144" y="456" font-size="18" text-anchor="end">higher is better</text>
+<rect x="610" y="422" width="554" height="254" rx="12" fill="white"/><text x="630" y="456" font-size="24" font-weight="700">Min guest MemAvailable (MiB)</text><text x="1144" y="456" font-size="18" text-anchor="end">higher is better</text>
 <text x="630" y="496" font-size="20">Jex + Jdbi</text>
 <rect x="848" y="474" width="229.00" height="14" fill="#176b76"/><text x="1084.00" y="487" font-size="18">122.22</text>
 <rect x="848" y="494" width="225.14" height="14" fill="#6844a5"/><text x="1080.14" y="507" font-size="18">120.16</text>
