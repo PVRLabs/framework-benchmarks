@@ -8,10 +8,17 @@ behavior before measurement.
 
 ## Initial v1 candidates
 
-- Spring Boot + Spring JDBC
-- Quarkus REST + CoilBase
-- Avaje Jex + CoilBase
-- [Micronaut HTTP + Micronaut Data JDBC](framework-benchmarks/micronaut-data-jdbc/README.md)
+- Jex + Jdbi
+- Quarkus + Jdbi
+- Spring Boot + JDBC
+- [Micronaut Data JDBC](framework-benchmarks/micronaut-data-jdbc/README.md)
+
+The implementations use Jex + CoilBase + Jdbi + HikariCP, Quarkus REST +
+CoilBase + Jdbi + Agroal, Spring Boot + Spring JDBC + HikariCP, and Micronaut
+HTTP + Micronaut Data JDBC + HikariCP. CoilBase provides application structure
+and persistence integration for Jex and Quarkus. The benchmark maintainer
+is also the CoilBase author. The measurements describe complete application
+stacks and do not isolate framework overhead.
 
 [Market Replay Portfolio](market-replay-portfolio/README.md) simulates an
 investment portfolio service with portfolio reads and updates, valuations,
@@ -19,25 +26,40 @@ and periodic market price ingestion. These operations exercise HTTP, database
 access, transactions, and background processing.
 
 All four use the same PostgreSQL schema, correctness contract, and public
-synthetic replay. The four-candidate comparison is awaiting measurement and
-acceptance. See the [v1 suite guide](framework-benchmarks/suite-v1.md).
+synthetic replay. The featured results below use the accepted Debian 13 suite. See the [v1 suite guide](framework-benchmarks/suite-v1.md).
 
-## Featured benchmark — pre-release evidence
+## Featured benchmark — Debian 13 v1
 
-The chart and report below show the accepted pre-release comparison of Jex,
-Quarkus, and Spring Boot using historical market prices. The four-candidate
-v1 comparison will replace this featured result after acceptance.
+The accepted comparison ran two rounds on a Debian 13 QEMU/KVM guest on an
+AMD Ryzen 7 4700U Linux host. The guest had 1 vCPU, 512 MiB RAM and no swap.
+Each application shared the guest with PostgreSQL 18.7
+(`18.7-1.pgdg13+5`). Both rounds used HotSpot 27 (build `27+35-2325`).
+Measurement evidence was written to ext4. All eight runs sustained 40 RPS
+with zero workload errors, timeouts, unsent requests or OOM kills.
 
-The runs used a Linux host (AMD Ryzen 7 4700U) running a QEMU/KVM Ubuntu VM
-with 1 vCPU, 512 MiB RAM, and no swap. The application and PostgreSQL shared
-the VM. Both rounds used OpenJDK 27 (build `27+35-2325`) and PostgreSQL
-18.7 (Ubuntu package `18.7-1.pgdg24.04+2`). Sustained load was offered at 40 RPS.
+![Debian 13 v1 results for all four stacks, with separate bars for each round.](docs/featured-v1.svg)
 
-| Target | HTTP framework | Persistence | Connection pool | PostgreSQL JDBC | Artifact manifests |
+| Stack | Round | App readiness (s) | Peak app RSS (MiB) | Sustained p99 (ms) | Min. guest MemAvailable (MiB) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Jex + Jdbi | 1 | 4.64 | 148.16 | 11.03 | 202.43 |
+| Quarkus + Jdbi | 1 | 5.93 | 200.23 | 11.26 | 150.56 |
+| Spring Boot + JDBC | 1 | 10.64 | 233.29 | 11.43 | 119.36 |
+| Micronaut Data JDBC | 1 | 7.36 | 209.86 | 11.13 | 142.98 |
+| Jex + Jdbi | 2 | 4.87 | 149.96 | 11.02 | 196.95 |
+| Quarkus + Jdbi | 2 | 6.05 | 205.49 | 11.05 | 147.02 |
+| Spring Boot + JDBC | 2 | 10.82 | 221.73 | 11.51 | 126.95 |
+| Micronaut Data JDBC | 2 | 7.72 | 219.40 | 11.38 | 128.29 |
+
+Readiness measures application launch to a successful database-backed check.
+The memory figures are sampled sustained-phase extrema. Sustained p99 includes
+client scheduling and SSH transport.
+
+| Stack | HTTP framework | Persistence | Connection pool | PostgreSQL JDBC | Artifact manifests |
 | --- | --- | --- | --- | --- | --- |
-| Jex + CoilBase | Avaje Jex 3.6, Avaje HTTP 3.12.1 | CoilBase Core and CoilBase Jex adapter (both 0.1.0-preview5) | HikariCP 7.0.2 | 42.7.8 | [R1](framework-benchmarks/evidence/v1-accepted/round-01/jex-coilbase/environment/artifacts.txt), [R2](framework-benchmarks/evidence/v1-accepted/round-02/jex-coilbase/environment/artifacts.txt) |
-| Quarkus + CoilBase | Quarkus REST 3.40.1 | CoilBase Core 0.1.0-preview5 | Agroal 3.2.1 | 42.7.13 | [R1](framework-benchmarks/evidence/v1-accepted/round-01/quarkus-coilbase/environment/artifacts.txt), [R2](framework-benchmarks/evidence/v1-accepted/round-02/quarkus-coilbase/environment/artifacts.txt) |
-| Spring Boot + JDBC | Spring Boot 4.1.1, Spring MVC 7.0.9, Tomcat 11.0.24 | Spring JDBC 7.0.9 | HikariCP 7.0.2 | 42.7.13 | [R1](framework-benchmarks/evidence/v1-accepted/round-01/spring-boot/environment/artifacts.txt), [R2](framework-benchmarks/evidence/v1-accepted/round-02/spring-boot/environment/artifacts.txt) |
+| Jex + Jdbi | Avaje Jex 3.6, Avaje HTTP 3.12.1 | CoilBase Core and Jex adapter 0.1.0-preview5, Jdbi 3.55.0 | HikariCP 7.0.2 | 42.7.8 | [R1](framework-benchmarks/evidence/debian-v1/round-01/jex-coilbase/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/jex-coilbase/environment/artifacts.txt) |
+| Quarkus + Jdbi | Quarkus REST 3.40.1 | CoilBase Core 0.1.0-preview5, Jdbi 3.55.0 | Agroal 3.2.1 | 42.7.13 | [R1](framework-benchmarks/evidence/debian-v1/round-01/quarkus-coilbase/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/quarkus-coilbase/environment/artifacts.txt) |
+| Spring Boot + JDBC | Spring Boot 4.1.1, Tomcat 11.0.24 | Spring JDBC 7.0.9 | HikariCP 7.0.2 | 42.7.13 | [R1](framework-benchmarks/evidence/debian-v1/round-01/spring-boot/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/spring-boot/environment/artifacts.txt) |
+| Micronaut Data JDBC | Micronaut HTTP Server Netty 5.2.11 | Micronaut Data JDBC 5.2.0 | Micronaut JDBC Hikari 7.2.0, HikariCP 7.1.0 | 42.7.13 | [R1](framework-benchmarks/evidence/debian-v1/round-01/micronaut-data-jdbc/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/micronaut-data-jdbc/environment/artifacts.txt) |
 
 ### Why CoilBase instead of Hibernate in Quarkus?
 
@@ -46,8 +68,7 @@ compares lightweight, SQL-first applications with equivalent functionality.
 Quarkus REST handles HTTP, Quarkus supplies JDBC connectivity, and Agroal
 manages the connection pool. The Quarkus target uses only `coilbase-core`
 from CoilBase, with Jdbi for SQL access and explicit transaction management.
-Neither `coilbase-jex` nor Avaje Jex is part of this target. We expect
-CoilBase itself to add negligible overhead, but have not measured it separately.
+Neither `coilbase-jex` nor Avaje Jex is part of this target.
 
 In the earlier [Hibernate isolation experiment](https://pvrlabs.xyz/java-performance/experiments/jpa-memory-experiment-revisited.html),
 the same demo app used either Jdbi or direct Hibernate without Spring Data JPA.
@@ -60,19 +81,17 @@ Readers interested in Hibernate or another persistence approach are welcome to
 reproduce the benchmark and submit a proposal or PR with supporting measurements.
 Additions should answer a specific comparison question.
 
-![Accepted pre-release results for Jex, Quarkus, and Spring Boot in rounds 1 and 2. Jex had the fastest readiness and lowest sampled peak app RSS in both rounds. Sustained p99 ranged from 9.40 to 10.19 ms.](docs/featured-v1.svg)
-
-Readiness is time to the first successful database-backed readiness check.
-RSS is the sampled peak for the application during sustained measurement.
-Sustained p99 includes client scheduling and SSH transport.
-
-See the [full HTML report](framework-benchmarks/evidence/v1-accepted/report.html),
-[recorded evidence](framework-benchmarks/evidence/v1-accepted/), and
+See the [full HTML report](framework-benchmarks/evidence/debian-v1/report.html),
+[recorded evidence](framework-benchmarks/evidence/debian-v1/suite.json), and
 [frozen v1 protocol](framework-benchmarks/protocol-v1.md).
+The [three-stack Ubuntu pre-release report](framework-benchmarks/evidence/v1-accepted/report.html)
+remains archived with its own evidence.
 
-The maintainer manually selects the featured benchmark from local or CI runs.
-CI provides independent reproduction and verification. Its results do not
-automatically replace the featured measurements.
+Suite completion and the offline `report` command regenerate `report.html`
+and, for complete measurement suites, `featured.svg` beside `suite.json`.
+Review the generated SVG and copy it to `docs/featured-v1.svg` only after
+publication approval. Preparation and failed or incomplete suites produce
+only the detailed report.
 
 Each target is one evolving implementation. Historical results stay tied to
 the exact component versions and configuration used.
@@ -89,9 +108,9 @@ optional optimization studies.
 
 The pre-release runs used historical market prices. The v1 suite uses
 synthetic prices with the same symbols, sample count, and replay cadence.
-The public evidence omits historical prices and derived valuations from the
+The pre-release archive omits historical prices and derived valuations from the
 post-load portfolio snapshots. The accepted performance measurements are
-unchanged. Runs with the public fixture produce separate measurements.
+unchanged. The featured Debian results use the public fixture.
 
 The archived evidence retains slot observations, memory samples, pressure
 counters, and artifact hashes. Host identifiers and local paths were redacted,
@@ -130,9 +149,10 @@ installs PostgreSQL 18.7, and verifies the pinned OpenJDK archive.
 ```sh
 tools/vm.sh create fb-debian-v1 framework-benchmarks/vm-linux.yaml
 tools/vm.sh start fb-debian-v1
+tools/provision-benchmark-storage.sh fb-debian-v1
 curl -fL -o fb-jdk.tar.gz https://download.java.net/java/GA/jdk27/55ce5470a6294008af0057ff4626d0e5/35/GPL/openjdk-27_linux-x64_bin.tar.gz
 printf '%s  %s\n' 95fc37eb3a18a27a26d5904c2d89d52bace8dafa9a078ca27f4747fbc4bf070b fb-jdk.tar.gz | sha256sum -c -
-tools/vm.sh put fb-debian-v1 fb-jdk.tar.gz /tmp/fb-jdk.tar.gz
+tools/vm.sh put fb-debian-v1 fb-jdk.tar.gz /var/tmp/fb-jdk.tar.gz
 tools/vm.sh put fb-debian-v1 framework-benchmarks/scripts /tmp/fb-setup
 tools/vm.sh exec fb-debian-v1 sudo bash /tmp/fb-setup/setup-vm.sh
 ```
@@ -172,16 +192,18 @@ four candidates on a dedicated Linux QEMU/KVM host. Keep new work under fresh
 paths in `work/`. The pre-release suite and report are archived under
 `framework-benchmarks/evidence/v1-accepted/`.
 
-### Regenerate the archived pre-release report
+### Regenerate the featured report and chart
 
 ```sh
-archive_copy=$(mktemp -d)
-cp -a framework-benchmarks/evidence/v1-accepted/. "$archive_copy/"
-python3 framework-benchmarks/scripts/colocated-suite.py report "$archive_copy/suite.json"
-cmp framework-benchmarks/evidence/v1-accepted/report.html "$archive_copy/report.html"
+evidence_copy=$(mktemp -d)
+cp -a framework-benchmarks/evidence/debian-v1/. "$evidence_copy/"
+python3 framework-benchmarks/scripts/colocated-suite.py report "$evidence_copy/suite.json"
+cmp framework-benchmarks/evidence/debian-v1/report.html "$evidence_copy/report.html"
+cmp docs/featured-v1.svg "$evidence_copy/featured.svg"
 ```
 
-The report uses Python's standard library and writes HTML beside the manifest.
+The report generator uses Python’s standard library. The same command also
+works with the archived pre-release manifest.
 
 ## Future comparisons
 

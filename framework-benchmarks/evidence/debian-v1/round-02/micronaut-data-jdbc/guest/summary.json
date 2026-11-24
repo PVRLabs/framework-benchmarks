@@ -1,0 +1,33 @@
+{
+  "candidate": "micronaut-data-jdbc",
+  "flags": [
+    "-Xms16m",
+    "-Xmx80m",
+    "-XX:+UseG1GC",
+    "-Duser.timezone=UTC"
+  ],
+  "idle_seconds": 30,
+  "stabilize_seconds": 10,
+  "errors": [],
+  "postgres_start_seconds": 2.3232116909998695,
+  "postgres_cgroup": "/sys/fs/cgroup/system.slice/system-postgresql.slice/postgresql@18-main.service",
+  "launch_monotonic": 3156.944843945,
+  "pid": 4884,
+  "ready_seconds": 7.718906178000452,
+  "app_exit": 143,
+  "forced_shutdown": false,
+  "postgres_stopped": true,
+  "oom_kill_delta": 0,
+  "sample_counts": {
+    "baseline": 3,
+    "idle": 30,
+    "light-load": 29,
+    "measurement": 180,
+    "postgres-only": 3,
+    "postgres-startup": 3,
+    "stabilize": 9,
+    "startup": 8,
+    "warmup": 122
+  },
+  "status": "completed"
+}

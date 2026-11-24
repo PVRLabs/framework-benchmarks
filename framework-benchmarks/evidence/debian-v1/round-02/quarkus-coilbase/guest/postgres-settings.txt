@@ -1,0 +1,13 @@
+ autovacuum                                  | on                                      |      | default
+ fsync                                       | on                                      |      | default
+ io_method                                   | worker                                  |      | default
+ jit                                         | off                                     |      | configuration file
+ maintenance_work_mem                        | 16384                                   | kB   | configuration file
+ max_connections                             | 10                                      |      | configuration file
+ max_parallel_workers                        | 0                                       |      | configuration file
+ max_parallel_workers_per_gather             | 0                                       |      | configuration file
+ server_version                              | 18.7 (Debian 18.7-1.pgdg13+5)           |      | default
+ shared_buffers                              | 2048                                    | 8kB  | configuration file
+ superuser_reserved_connections              | 1                                       |      | configuration file
+ wal_level                                   | replica                                 |      | default
+ work_mem                                    | 1024                                    | kB   | configuration file

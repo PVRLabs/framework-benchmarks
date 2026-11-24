@@ -30,7 +30,7 @@ PY
 cp "$stage/SHA256SUMS" "$stage/payload/SHA256SUMS"
 COPYFILE_DISABLE=1 tar -czf "$stage/payload.tar.gz" -C "$stage/payload" .
 archive_sha=$(shasum -a 256 "$stage/payload.tar.gz" | awk '{print $1}')
-remote_stage=$("$tools_dir/vm.sh" exec "$vm" mktemp -d /tmp/experiment-deploy.XXXXXXXX)
+remote_stage=$("$tools_dir/vm.sh" exec "$vm" mktemp -d /var/tmp/experiment-deploy.XXXXXXXX)
 echo "Guest staging directory (retained on failure): $remote_stage" >&2
 "$tools_dir/vm.sh" put "$vm" "$stage/payload.tar.gz" "$remote_stage/payload.tar.gz"
 "$tools_dir/vm.sh" exec "$vm" bash -s -- "$remote_stage" "$destination" "$archive_sha" <<'GUEST'

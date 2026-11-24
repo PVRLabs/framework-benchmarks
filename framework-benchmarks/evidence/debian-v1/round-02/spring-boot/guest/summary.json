@@ -1,0 +1,34 @@
+{
+  "candidate": "spring-boot",
+  "flags": [
+    "-Xms16m",
+    "-Xmx80m",
+    "-XX:+UseG1GC",
+    "-Duser.timezone=UTC"
+  ],
+  "idle_seconds": 30,
+  "stabilize_seconds": 10,
+  "errors": [],
+  "postgres_start_seconds": 2.333322186999794,
+  "postgres_cgroup": "/sys/fs/cgroup/system.slice/system-postgresql.slice/postgresql@18-main.service",
+  "launch_monotonic": 2751.552888435,
+  "pid": 4609,
+  "ready_seconds": 10.8155302199998,
+  "app_exit": 143,
+  "forced_shutdown": false,
+  "postgres_stopped": true,
+  "oom_kill_delta": 0,
+  "sample_counts": {
+    "baseline": 3,
+    "idle": 30,
+    "light-load": 29,
+    "measurement": 179,
+    "post-load": 1,
+    "postgres-only": 3,
+    "postgres-startup": 3,
+    "stabilize": 9,
+    "startup": 11,
+    "warmup": 122
+  },
+  "status": "completed"
+}

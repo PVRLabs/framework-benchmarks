@@ -1,0 +1,24 @@
+{
+  "userId": 1,
+  "holdings": [
+    {
+      "symbol": "AAPL",
+      "quantity": 8.0,
+      "price": 332.0,
+      "value": 2656.0
+    },
+    {
+      "symbol": "GOOG",
+      "quantity": 33.0,
+      "price": 342.0,
+      "value": 11286.0
+    },
+    {
+      "symbol": "NVDA",
+      "quantity": 30.0,
+      "price": 230.0,
+      "value": 6900.0
+    }
+  ],
+  "totalValue": 20842.0
+}

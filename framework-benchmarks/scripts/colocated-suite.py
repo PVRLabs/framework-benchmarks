@@ -11,6 +11,7 @@ from pathlib import Path
 import platform
 import re
 import signal
+import subprocess
 from urllib.parse import quote
 
 runner = importlib.import_module('colocated-run')
@@ -59,10 +60,25 @@ def protocol(preparation=False, version='3.4-mvp', *, archived=False):
     return settings
 
 
+LABELS = {
+    'jex-coilbase': 'Jex + Jdbi',
+    'quarkus-coilbase': 'Quarkus + Jdbi',
+    'spring-boot': 'Spring Boot + JDBC',
+    'micronaut-data-jdbc': 'Micronaut Data JDBC',
+}
+IMPLEMENTATIONS = {
+    'jex-coilbase': 'Jex + CoilBase + Jdbi + HikariCP',
+    'quarkus-coilbase': 'Quarkus REST + CoilBase + Jdbi + Agroal',
+    'spring-boot': 'Spring Boot + Spring JDBC + HikariCP',
+    'micronaut-data-jdbc': 'Micronaut HTTP + Micronaut Data JDBC + HikariCP',
+}
+
+
 def candidate_label(candidate):
-    if 'round' in candidate:
-        return f"{candidate['id']} · Round {candidate['round']}"
-    return candidate['id']
+    label = LABELS[candidate["id"]]
+    if "round" in candidate:
+        return f"{label} · Round {candidate['round']}"
+    return label
 
 
 def round_path(number):
@@ -350,6 +366,9 @@ guest headroom. The guest sampler shares the application vCPU. OS caches can rem
 when independently verified. Charts include completed phases with verified environments.</p>
 <p><a href="suite.json">Suite manifest</a></p>
 <h2>Comparisons</h2>"""]
+    parts.append('<p>These results compare complete application stacks. CoilBase provides '
+                 'application structure and persistence integration for Jex and Quarkus. '
+                 'The benchmark maintainer is also the CoilBase author.</p>')
     if not settings.get('sample_window_markers'):
         parts.append('<p>Earlier idle and warm-up evidence uses guest phase labels for memory. '
                      'Idle samples may include the connection check where idle markers are absent.</p>')
@@ -370,7 +389,7 @@ when independently verified. Charts include completed phases with verified envir
             for metric in ('p95_ms', 'p99_ms'):
                 values = [c['phases']['sustained'][metric] for c in runs]
                 spreads.append(display(max(values)-min(values) if len(values) == settings['rounds'] else None))
-            parts.append(f'<tr><th scope="row">{esc(key)}</th><td>{spreads[0]}</td><td>{spreads[1]}</td></tr>')
+            parts.append(f'<tr><th scope="row">{esc(LABELS[key])}</th><td>{spreads[0]}</td><td>{spreads[1]}</td></tr>')
         parts.append('</tbody></table>')
     labels = dict(startup='Startup', idle='Idle', light='Light load', warmup='Sustained warm-up',
                   sustained='Sustained measurement')
@@ -399,7 +418,7 @@ when independently verified. Charts include completed phases with verified envir
         evidence = root/candidate['evidence']
         directory = (f'<a href="{quote(candidate["evidence"])}/">Raw evidence directory</a>'
                      if evidence.is_dir() else 'Raw evidence directory unavailable')
-        heading = candidate['stack']
+        heading = IMPLEMENTATIONS[candidate['id']]
         if 'round' in candidate:
             heading += f" · Round {candidate['round']}"
         parts.append(f'<h3>{esc(heading)}</h3><p>{esc(candidate["status"])} · {directory}</p>')
@@ -465,6 +484,66 @@ def verify_round_artifacts(root, candidates):
             fail(second, reason)
 
 
+def featured_svg(suite):
+    """Render a completed measurement suite using the same validated rows as HTML."""
+    settings = suite['protocol']
+    if suite['status'] != 'completed' or settings['id'].endswith('-preparation'):
+        return None
+    runs = suite['candidates']
+    keys = [key for key in LABELS if any(run['id'] == key for run in runs)]
+    metrics = (
+        ('App readiness (s)', 'startup', 'ready_seconds'),
+        ('Sampled peak app RSS (MiB)', 'sustained', 'app_rss_mib'),
+        ('Sustained p99 latency (ms)', 'sustained', 'p99_ms'),
+        ('Min. guest MemAvailable (MiB)', 'sustained', 'available_mib'),
+    )
+    debian = all('Debian GNU/Linux 13' in run['runtime'].get('Guest', '') for run in runs)
+    ubuntu = all('Ubuntu' in run['runtime'].get('Guest', '') for run in runs)
+    os_name = 'Debian 13' if debian else 'Ubuntu' if ubuntu else 'Linux'
+    postgres = settings.get('postgres_version') or '18'
+    rounds = settings.get('rounds', 1)
+    subtitle = f'{os_name} · 1 vCPU · 512 MiB · PostgreSQL {postgres} · HotSpot 27'
+    subtitle += f" · {settings['sustained_rate']:g} RPS sustained"
+    colors = ('#176b76', '#6844a5')
+    parts = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" '
+             'role="img" aria-labelledby="title desc">',
+             '<title id="title">Framework Benchmarks</title>',
+             '<desc id="desc">Readiness, application RSS, latency and guest memory headroom '
+             'for each recorded run, with values next to the bars.</desc>',
+             '<rect width="1200" height="760" fill="#f0f5fa"/>',
+             '<g font-family="Arial, Helvetica, sans-serif" fill="#12283e">',
+             '<text x="36" y="58" font-size="39" font-weight="700">Framework Benchmarks</text>',
+             f'<text x="36" y="94" font-size="23">{escape(subtitle)}</text>']
+    for index in range(rounds):
+        x = 36 + index * 145
+        parts.append(f'<rect x="{x}" y="114" width="20" height="20" fill="{colors[index]}"/>'
+                     f'<text x="{x+30}" y="131" font-size="20">Round {index+1}</text>')
+    for index, (title, phase, metric) in enumerate(metrics):
+        x, y = 36 + index % 2 * 574, 152 + index // 2 * 270
+        parts.append(f'<rect x="{x}" y="{y}" width="554" height="254" rx="12" fill="white"/>'
+                     f'<text x="{x+20}" y="{y+34}" font-size="24" font-weight="700">{title}</text>')
+        scale = max(run['phases'][phase][metric] for run in runs) or 1
+        for row, key in enumerate(keys):
+            top = y + 52 + row * 48
+            parts.append(f'<text x="{x+20}" y="{top+22}" font-size="20">{LABELS[key]}</text>')
+            for run in (run for run in runs if run['id'] == key):
+                value = run['phases'][phase][metric]
+                order = run.get('round', 1) - 1
+                bar_y = top + order * 20
+                width = 229 * value / scale
+                parts.append(f'<rect x="{x+238}" y="{bar_y}" width="{width:.2f}" height="14" '
+                             f'fill="{colors[order]}"/>'
+                             f'<text x="{x+245+width:.2f}" y="{bar_y+13}" font-size="18">{value:.2f}</text>')
+    parts.extend([
+        '<text x="36" y="710" font-size="19">Memory uses sampled peaks and minima. '
+        'p99 includes client scheduling and SSH transport.</text>',
+        '<text x="36" y="738" font-size="19">Complete application stacks. '
+        'Jex and Quarkus use CoilBase for structure and persistence integration.</text>',
+        '</g></svg>',
+    ])
+    return '\n'.join(parts) + '\n'
+
+
 def regenerate(path, refresh=False):
     suite = read_json(path)
     entries = suite['candidates']
@@ -509,7 +588,28 @@ def regenerate(path, refresh=False):
     if refresh:
         persist(path, suite)
     (path.parent/'report.html').write_text(render(suite, path.parent), encoding='utf-8')
+    featured = path.parent/'featured.svg'
+    svg = featured_svg(suite)
+    if svg is None:
+        featured.unlink(missing_ok=True)
+    else:
+        featured.write_text(svg, encoding='utf-8')
     return suite
+
+
+def verify_guest_storage(vm, guest_root):
+    check(Path(guest_root).is_absolute(), 'Guest run root must be an absolute path')
+    command = [str(runner.VM), 'exec', vm]
+    try:
+        subprocess.run([*command, 'mkdir', '-p', '--', guest_root], check=True, timeout=30)
+        filesystem = subprocess.check_output(
+            [*command, 'findmnt', '-n', '-o', 'FSTYPE', '-T', guest_root],
+            text=True, timeout=30).strip()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError(f'Cannot verify guest evidence storage at {guest_root}: {exc}') from exc
+    check(filesystem in {'ext4', 'xfs', 'btrfs'},
+          f'Guest evidence needs a disk-backed filesystem at {guest_root}. '
+          f'Found {filesystem or "no mount"}. Use /var/tmp/fb-runs on the Debian guest.')
 
 
 def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-mvp'):
@@ -522,6 +622,8 @@ def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-m
     settings = protocol(preparation, version)
     host = platform.node()
     check(platform.system() == 'Linux', 'Run the suite on a Linux host')
+    if version == 'v1':
+        verify_guest_storage(vm, guest_root)
     output.mkdir(parents=True, exist_ok=False)
     candidates = [dict(id=key, stack=stacks[key], bundle=bundles[key], evidence=key, execution='pending',
                        status='incomplete', phases={phase: {'status': 'incomplete'} for phase in PHASES},
@@ -589,7 +691,7 @@ def main():
     run = commands.add_parser('run')
     run.add_argument('--output', type=Path, required=True)
     run.add_argument('--vm', default='fb-512')
-    run.add_argument('--guest-run-root', default='/tmp/fb-runs')
+    run.add_argument('--guest-run-root', default='/var/tmp/fb-runs')
     run.add_argument('--bundle', action='append', required=True, metavar='CANDIDATE=/GUEST/PATH')
     run.add_argument('--protocol', choices=('v1',), default='v1')
     run.add_argument('--preparation', action='store_true')
@@ -612,7 +714,10 @@ def main():
         bundles[key] = bundle
     if bundles.keys() != stacks.keys():
         run.error('Expected exactly one bundle for each of: ' + ', '.join(stacks))
-    return run_suite(args.output, bundles, args.vm, args.guest_run_root, args.preparation, args.protocol)
+    try:
+        return run_suite(args.output, bundles, args.vm, args.guest_run_root, args.preparation, args.protocol)
+    except ValueError as exc:
+        run.error(str(exc))
 
 
 if __name__ == '__main__':

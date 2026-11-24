@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debian 13 v1 · Framework Benchmarks</title>
+<style>
+body {font: 16px system-ui,sans-serif; color:#162739; background:#f7f9fc; max-width:75rem; margin:2rem auto; padding:0 1rem}
+table {border-collapse:collapse; width:100%; background:white} th,td {padding:.5rem; text-align:left; border:1px solid #c9d5df; vertical-align:top}
+pre {white-space:pre-wrap; overflow-wrap:anywhere} a {color:#135b94} figure {margin:1rem 0; max-width:43rem}
+figcaption {font-weight:600} svg {width:100%; fill:#162739; background:white} rect {fill:#26728e}
+</style>
+<body><h1>Framework Benchmarks · Debian 13 v1</h1>
+<p>2026-11-23T23:22:39.636454+00:00 · completed · Linux benchmark host / Debian 13 guest</p>
+<p>Protocol v1 with synthetic market prices. Two sequential rounds per candidate. Latency runs from scheduled
+client slot to response completion, including dispatch, queueing and SSH transport.
+Guest memory reports sampled peaks and minima at roughly 1 Hz. PostgreSQL PSS
+sums proportional memory across sampled database processes. MemAvailable estimates
+guest headroom. The guest sampler shares the application vCPU. OS caches can remain warm.</p>
+<p>Successful-request latency from failed or incomplete phases is listed in the table
+when independently verified. Charts include completed phases with verified environments.</p>
+<p><a href="suite.json">Suite manifest</a></p>
+<h2>Comparisons</h2>
+<p>These results compare complete application stacks. CoilBase provides application structure and persistence integration for Jex and Quarkus. The benchmark maintainer is also the CoilBase author.</p>
+<figure><figcaption>App readiness (s)</figcaption><svg role="img" aria-label="App readiness (s)" viewBox="0 0 640 280"><text x="4" y="25">Jex + Jdbi · Round 1</text><rect x="245" y="11" width="139.56" height="18"/><text x="392.56" y="25">4.64</text><text x="4" y="59">Quarkus + Jdbi · Round 1</text><rect x="245" y="45" width="178.15" height="18"/><text x="431.15" y="59">5.93</text><text x="4" y="93">Spring Boot + JDBC · Round 1</text><rect x="245" y="79" width="319.86" height="18"/><text x="572.86" y="93">10.64</text><text x="4" y="127">Micronaut Data JDBC · Round 1</text><rect x="245" y="113" width="221.07" height="18"/><text x="474.07" y="127">7.36</text><text x="4" y="161">Jex + Jdbi · Round 2</text><rect x="245" y="147" width="146.39" height="18"/><text x="399.39" y="161">4.87</text><text x="4" y="195">Quarkus + Jdbi · Round 2</text><rect x="245" y="181" width="181.72" height="18"/><text x="434.72" y="195">6.05</text><text x="4" y="229">Spring Boot + JDBC · Round 2</text><rect x="245" y="215" width="325.00" height="18"/><text x="578.00" y="229">10.82</text><text x="4" y="263">Micronaut Data JDBC · Round 2</text><rect x="245" y="249" width="231.95" height="18"/><text x="484.95" y="263">7.72</text></svg></figure>
+<figure><figcaption>Idle peak app RSS (MiB)</figcaption><svg role="img" aria-label="Idle peak app RSS (MiB)" viewBox="0 0 640 280"><text x="4" y="25">Jex + Jdbi · Round 1</text><rect x="245" y="11" width="183.36" height="18"/><text x="436.36" y="25">124.22</text><text x="4" y="59">Quarkus + Jdbi · Round 1</text><rect x="245" y="45" width="255.46" height="18"/><text x="508.46" y="59">173.07</text><text x="4" y="93">Spring Boot + JDBC · Round 1</text><rect x="245" y="79" width="325.00" height="18"/><text x="578.00" y="93">220.18</text><text x="4" y="127">Micronaut Data JDBC · Round 1</text><rect x="245" y="113" width="275.87" height="18"/><text x="528.87" y="127">186.90</text><text x="4" y="161">Jex + Jdbi · Round 2</text><rect x="245" y="147" width="181.56" height="18"/><text x="434.56" y="161">123.00</text><text x="4" y="195">Quarkus + Jdbi · Round 2</text><rect x="245" y="181" width="260.92" height="18"/><text x="513.92" y="195">176.77</text><text x="4" y="229">Spring Boot + JDBC · Round 2</text><rect x="245" y="215" width="316.34" height="18"/><text x="569.34" y="229">214.31</text><text x="4" y="263">Micronaut Data JDBC · Round 2</text><rect x="245" y="249" width="295.83" height="18"/><text x="548.83" y="263">200.42</text></svg></figure>
+<figure><figcaption>Light-load peak app RSS (MiB)</figcaption><svg role="img" aria-label="Light-load peak app RSS (MiB)" viewBox="0 0 640 280"><text x="4" y="25">Jex + Jdbi · Round 1</text><rect x="245" y="11" width="206.54" height="18"/><text x="459.54" y="25">142.27</text><text x="4" y="59">Quarkus + Jdbi · Round 1</text><rect x="245" y="45" width="261.17" height="18"/><text x="514.17" y="59">179.90</text><text x="4" y="93">Spring Boot + JDBC · Round 1</text><rect x="245" y="79" width="325.00" height="18"/><text x="578.00" y="93">223.87</text><text x="4" y="127">Micronaut Data JDBC · Round 1</text><rect x="245" y="113" width="276.47" height="18"/><text x="529.47" y="127">190.44</text><text x="4" y="161">Jex + Jdbi · Round 2</text><rect x="245" y="147" width="208.05" height="18"/><text x="461.05" y="161">143.31</text><text x="4" y="195">Quarkus + Jdbi · Round 2</text><rect x="245" y="181" width="285.79" height="18"/><text x="538.79" y="195">196.86</text><text x="4" y="229">Spring Boot + JDBC · Round 2</text><rect x="245" y="215" width="312.54" height="18"/><text x="565.54" y="229">215.29</text><text x="4" y="263">Micronaut Data JDBC · Round 2</text><rect x="245" y="249" width="295.79" height="18"/><text x="548.79" y="263">203.75</text></svg></figure>
+<figure><figcaption>Sustained aggregate p99 (ms)</figcaption><svg role="img" aria-label="Sustained aggregate p99 (ms)" viewBox="0 0 640 280"><text x="4" y="25">Jex + Jdbi · Round 1</text><rect x="245" y="11" width="311.46" height="18"/><text x="564.46" y="25">11.03</text><text x="4" y="59">Quarkus + Jdbi · Round 1</text><rect x="245" y="45" width="318.09" height="18"/><text x="571.09" y="59">11.26</text><text x="4" y="93">Spring Boot + JDBC · Round 1</text><rect x="245" y="79" width="322.82" height="18"/><text x="575.82" y="93">11.43</text><text x="4" y="127">Micronaut Data JDBC · Round 1</text><rect x="245" y="113" width="314.26" height="18"/><text x="567.26" y="127">11.13</text><text x="4" y="161">Jex + Jdbi · Round 2</text><rect x="245" y="147" width="311.08" height="18"/><text x="564.08" y="161">11.02</text><text x="4" y="195">Quarkus + Jdbi · Round 2</text><rect x="245" y="181" width="311.98" height="18"/><text x="564.98" y="195">11.05</text><text x="4" y="229">Spring Boot + JDBC · Round 2</text><rect x="245" y="215" width="325.00" height="18"/><text x="578.00" y="229">11.51</text><text x="4" y="263">Micronaut Data JDBC · Round 2</text><rect x="245" y="249" width="321.31" height="18"/><text x="574.31" y="263">11.38</text></svg></figure>
+<h2>Sustained latency across rounds</h2><table><thead><tr><th scope="col">Candidate</th><th scope="col">p95 spread (ms)</th><th scope="col">p99 spread (ms)</th></tr></thead><tbody>
+<tr><th scope="row">Jex + Jdbi</th><td>0.16</td><td>0.01</td></tr>
+<tr><th scope="row">Quarkus + Jdbi</th><td>0.01</td><td>0.22</td></tr>
+<tr><th scope="row">Spring Boot + JDBC</th><td>0.27</td><td>0.08</td></tr>
+<tr><th scope="row">Micronaut Data JDBC</th><td>0.07</td><td>0.25</td></tr>
+</tbody></table>
+<h2>Startup</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">Jex + Jdbi · Round 1</th>
+<th scope="col">Quarkus + Jdbi · Round 1</th>
+<th scope="col">Spring Boot + JDBC · Round 1</th>
+<th scope="col">Micronaut Data JDBC · Round 1</th>
+<th scope="col">Jex + Jdbi · Round 2</th>
+<th scope="col">Quarkus + Jdbi · Round 2</th>
+<th scope="col">Spring Boot + JDBC · Round 2</th>
+<th scope="col">Micronaut Data JDBC · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">App readiness (s)</th><td>4.64</td><td>5.93</td><td>10.64</td><td>7.36</td><td>4.87</td><td>6.05</td><td>10.82</td><td>7.72</td></tr>
+<tr><th scope="row">PostgreSQL start (s)</th><td>2.31</td><td>2.32</td><td>2.32</td><td>2.32</td><td>2.32</td><td>2.31</td><td>2.33</td><td>2.32</td></tr>
+</tbody></table>
+<h2>Idle</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">Jex + Jdbi · Round 1</th>
+<th scope="col">Quarkus + Jdbi · Round 1</th>
+<th scope="col">Spring Boot + JDBC · Round 1</th>
+<th scope="col">Micronaut Data JDBC · Round 1</th>
+<th scope="col">Jex + Jdbi · Round 2</th>
+<th scope="col">Quarkus + Jdbi · Round 2</th>
+<th scope="col">Spring Boot + JDBC · Round 2</th>
+<th scope="col">Micronaut Data JDBC · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">Peak app RSS (MiB)</th><td>124.22</td><td>173.07</td><td>220.18</td><td>186.90</td><td>123.00</td><td>176.77</td><td>214.31</td><td>200.42</td></tr>
+<tr><th scope="row">Peak PostgreSQL PSS (MiB)</th><td>41.32</td><td>36.17</td><td>34.13</td><td>36.07</td><td>41.35</td><td>38.40</td><td>35.90</td><td>33.65</td></tr>
+<tr><th scope="row">Min guest MemAvailable (MiB)</th><td>227.62</td><td>183.15</td><td>134.84</td><td>170.08</td><td>225.65</td><td>176.82</td><td>142.24</td><td>150.11</td></tr>
+<tr><th scope="row">Guest samples</th><td>30</td><td>29</td><td>29</td><td>29</td><td>29</td><td>29</td><td>30</td><td>30</td></tr>
+<tr><th scope="row">Peak app PSS (MiB)</th><td>121.85</td><td>170.58</td><td>217.86</td><td>184.58</td><td>120.66</td><td>174.30</td><td>211.97</td><td>198.08</td></tr>
+</tbody></table>
+<h2>Light load</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">Jex + Jdbi · Round 1</th>
+<th scope="col">Quarkus + Jdbi · Round 1</th>
+<th scope="col">Spring Boot + JDBC · Round 1</th>
+<th scope="col">Micronaut Data JDBC · Round 1</th>
+<th scope="col">Jex + Jdbi · Round 2</th>
+<th scope="col">Quarkus + Jdbi · Round 2</th>
+<th scope="col">Spring Boot + JDBC · Round 2</th>
+<th scope="col">Micronaut Data JDBC · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">Peak app RSS (MiB)</th><td>142.27</td><td>179.90</td><td>223.87</td><td>190.44</td><td>143.31</td><td>196.86</td><td>215.29</td><td>203.75</td></tr>
+<tr><th scope="row">Peak PostgreSQL PSS (MiB)</th><td>45.80</td><td>40.67</td><td>39.54</td><td>39.16</td><td>45.84</td><td>42.98</td><td>38.26</td><td>38.10</td></tr>
+<tr><th scope="row">Min guest MemAvailable (MiB)</th><td>211.12</td><td>177.09</td><td>130.08</td><td>167.76</td><td>205.48</td><td>157.70</td><td>137.77</td><td>146.25</td></tr>
+<tr><th scope="row">Guest samples</th><td>29</td><td>29</td><td>29</td><td>30</td><td>29</td><td>29</td><td>29</td><td>29</td></tr>
+<tr><th scope="row">Aggregate p95 (ms)</th><td>24.28</td><td>27.08</td><td>26.86</td><td>31.88</td><td>23.38</td><td>27.08</td><td>26.59</td><td>27.77</td></tr>
+<tr><th scope="row">Aggregate p99 (ms)</th><td>45.76</td><td>46.06</td><td>35.41</td><td>39.50</td><td>52.68</td><td>49.44</td><td>44.37</td><td>45.20</td></tr>
+<tr><th scope="row">Dispatch p99 (ms)</th><td>0.79</td><td>0.68</td><td>0.66</td><td>0.69</td><td>0.72</td><td>0.67</td><td>0.69</td><td>0.80</td></tr>
+<tr><th scope="row">Completed/s incl. drain</th><td>5.00</td><td>5.00</td><td>5.00</td><td>5.00</td><td>5.00</td><td>5.00</td><td>5.00</td><td>5.00</td></tr>
+<tr><th scope="row">Scheduled</th><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td></tr>
+<tr><th scope="row">Completed</th><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td></tr>
+<tr><th scope="row">Successful</th><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td><td>150</td></tr>
+<tr><th scope="row">Errors incl. timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Unsent</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Peak app PSS (MiB)</th><td>139.90</td><td>177.41</td><td>221.54</td><td>188.12</td><td>140.97</td><td>194.39</td><td>212.94</td><td>201.42</td></tr>
+<tr><th scope="row">Queue p99 (ms)</th><td>0.25</td><td>0.29</td><td>0.25</td><td>0.31</td><td>0.28</td><td>0.29</td><td>0.31</td><td>0.44</td></tr>
+<tr><th scope="row">HTTP p99 (ms)</th><td>45.02</td><td>45.30</td><td>34.63</td><td>38.88</td><td>52.21</td><td>48.66</td><td>43.46</td><td>44.43</td></tr>
+</tbody></table>
+<h2>Sustained warm-up</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">Jex + Jdbi · Round 1</th>
+<th scope="col">Quarkus + Jdbi · Round 1</th>
+<th scope="col">Spring Boot + JDBC · Round 1</th>
+<th scope="col">Micronaut Data JDBC · Round 1</th>
+<th scope="col">Jex + Jdbi · Round 2</th>
+<th scope="col">Quarkus + Jdbi · Round 2</th>
+<th scope="col">Spring Boot + JDBC · Round 2</th>
+<th scope="col">Micronaut Data JDBC · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">Peak app RSS (MiB)</th><td>147.60</td><td>199.79</td><td>233.34</td><td>206.60</td><td>149.39</td><td>205.09</td><td>221.84</td><td>217.28</td></tr>
+<tr><th scope="row">Peak PostgreSQL PSS (MiB)</th><td>45.81</td><td>43.34</td><td>39.73</td><td>39.39</td><td>46.44</td><td>43.34</td><td>39.98</td><td>41.16</td></tr>
+<tr><th scope="row">Min guest MemAvailable (MiB)</th><td>203.69</td><td>151.34</td><td>119.71</td><td>146.99</td><td>197.78</td><td>147.61</td><td>126.96</td><td>130.69</td></tr>
+<tr><th scope="row">Guest samples</th><td>122</td><td>122</td><td>121</td><td>122</td><td>122</td><td>122</td><td>122</td><td>122</td></tr>
+<tr><th scope="row">Aggregate p95 (ms)</th><td>10.14</td><td>11.29</td><td>11.54</td><td>11.80</td><td>10.27</td><td>11.06</td><td>11.61</td><td>12.01</td></tr>
+<tr><th scope="row">Aggregate p99 (ms)</th><td>13.11</td><td>15.49</td><td>15.61</td><td>15.84</td><td>13.44</td><td>14.26</td><td>16.36</td><td>16.63</td></tr>
+<tr><th scope="row">Dispatch p99 (ms)</th><td>0.57</td><td>0.57</td><td>0.58</td><td>0.58</td><td>0.58</td><td>0.57</td><td>0.56</td><td>0.56</td></tr>
+<tr><th scope="row">Completed/s incl. drain</th><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td></tr>
+<tr><th scope="row">Scheduled</th><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td></tr>
+<tr><th scope="row">Completed</th><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td></tr>
+<tr><th scope="row">Successful</th><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td><td>5000</td></tr>
+<tr><th scope="row">Errors incl. timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Unsent</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Peak app PSS (MiB)</th><td>145.22</td><td>197.29</td><td>231.00</td><td>204.27</td><td>147.04</td><td>202.62</td><td>219.49</td><td>214.95</td></tr>
+<tr><th scope="row">Queue p99 (ms)</th><td>0.28</td><td>0.25</td><td>0.27</td><td>0.27</td><td>0.33</td><td>0.25</td><td>0.34</td><td>0.36</td></tr>
+<tr><th scope="row">HTTP p99 (ms)</th><td>12.63</td><td>15.05</td><td>15.05</td><td>15.57</td><td>12.89</td><td>13.94</td><td>15.84</td><td>16.26</td></tr>
+</tbody></table>
+<h2>Sustained measurement</h2><table><thead><tr><th scope="col">Metric</th>
+<th scope="col">Jex + Jdbi · Round 1</th>
+<th scope="col">Quarkus + Jdbi · Round 1</th>
+<th scope="col">Spring Boot + JDBC · Round 1</th>
+<th scope="col">Micronaut Data JDBC · Round 1</th>
+<th scope="col">Jex + Jdbi · Round 2</th>
+<th scope="col">Quarkus + Jdbi · Round 2</th>
+<th scope="col">Spring Boot + JDBC · Round 2</th>
+<th scope="col">Micronaut Data JDBC · Round 2</th>
+</tr></thead><tbody>
+<tr><th scope="row">Status</th><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td><td>completed<br></td></tr>
+<tr><th scope="row">Peak app RSS (MiB)</th><td>148.16</td><td>200.23</td><td>233.29</td><td>209.86</td><td>149.96</td><td>205.49</td><td>221.73</td><td>219.40</td></tr>
+<tr><th scope="row">Peak PostgreSQL PSS (MiB)</th><td>45.94</td><td>43.49</td><td>40.05</td><td>40.15</td><td>46.72</td><td>43.49</td><td>40.09</td><td>41.60</td></tr>
+<tr><th scope="row">Min guest MemAvailable (MiB)</th><td>202.43</td><td>150.56</td><td>119.36</td><td>142.98</td><td>196.95</td><td>147.02</td><td>126.95</td><td>128.29</td></tr>
+<tr><th scope="row">Guest samples</th><td>180</td><td>180</td><td>180</td><td>180</td><td>180</td><td>180</td><td>179</td><td>180</td></tr>
+<tr><th scope="row">Aggregate p95 (ms)</th><td>7.63</td><td>7.90</td><td>8.47</td><td>8.07</td><td>7.47</td><td>7.89</td><td>8.20</td><td>8.14</td></tr>
+<tr><th scope="row">Aggregate p99 (ms)</th><td>11.03</td><td>11.26</td><td>11.43</td><td>11.13</td><td>11.02</td><td>11.05</td><td>11.51</td><td>11.38</td></tr>
+<tr><th scope="row">Dispatch p99 (ms)</th><td>0.59</td><td>0.58</td><td>0.59</td><td>0.56</td><td>0.56</td><td>0.58</td><td>0.57</td><td>0.56</td></tr>
+<tr><th scope="row">Completed/s incl. drain</th><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td><td>40.00</td></tr>
+<tr><th scope="row">Scheduled</th><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td></tr>
+<tr><th scope="row">Completed</th><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td></tr>
+<tr><th scope="row">Successful</th><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td><td>7400</td></tr>
+<tr><th scope="row">Errors incl. timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Timeouts</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Unsent</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><th scope="row">Peak app PSS (MiB)</th><td>145.78</td><td>197.73</td><td>230.96</td><td>207.53</td><td>147.62</td><td>203.02</td><td>219.38</td><td>217.07</td></tr>
+<tr><th scope="row">Queue p99 (ms)</th><td>0.27</td><td>0.25</td><td>0.25</td><td>0.25</td><td>0.24</td><td>0.24</td><td>0.25</td><td>0.27</td></tr>
+<tr><th scope="row">HTTP p99 (ms)</th><td>10.67</td><td>10.86</td><td>11.00</td><td>10.74</td><td>10.62</td><td>10.59</td><td>11.17</td><td>11.00</td></tr>
+</tbody></table>
+<h2>Protocol</h2><p>PostgreSQL 18 Theory A. Each candidate starts with a fresh database, fixture and application. Light load runs after idle, followed immediately by sustained warm-up and measurement.</p>
+<pre>{
+  &quot;id&quot;: &quot;v1&quot;,
+  &quot;jvm&quot;: [
+    &quot;-Xms16m&quot;,
+    &quot;-Xmx80m&quot;,
+    &quot;-XX:+UseG1GC&quot;,
+    &quot;-Duser.timezone=UTC&quot;
+  ],
+  &quot;guest&quot;: &quot;QEMU/KVM, 1 vCPU, 512 MiB allocated, zero swap&quot;,
+  &quot;postgres&quot;: {
+    &quot;max_connections&quot;: &quot;10&quot;,
+    &quot;superuser_reserved_connections&quot;: &quot;1&quot;,
+    &quot;jit&quot;: &quot;off&quot;,
+    &quot;max_parallel_workers_per_gather&quot;: &quot;0&quot;,
+    &quot;max_parallel_workers&quot;: &quot;0&quot;,
+    &quot;shared_buffers&quot;: &quot;2048 8kB&quot;,
+    &quot;work_mem&quot;: &quot;1024 kB&quot;,
+    &quot;maintenance_work_mem&quot;: &quot;16384 kB&quot;,
+    &quot;io_method&quot;: &quot;worker&quot;,
+    &quot;fsync&quot;: &quot;on&quot;,
+    &quot;autovacuum&quot;: &quot;on&quot;,
+    &quot;wal_level&quot;: &quot;replica&quot;
+  },
+  &quot;pool_max&quot;: 4,
+  &quot;quote_poll_seconds&quot;: 60,
+  &quot;replay_step_seconds&quot;: 3600,
+  &quot;stabilize_seconds&quot;: 10,
+  &quot;idle_seconds&quot;: 30,
+  &quot;light_seconds&quot;: 30,
+  &quot;warmup_seconds&quot;: 125,
+  &quot;sustained_seconds&quot;: 185,
+  &quot;light_rate&quot;: 5,
+  &quot;sustained_rate&quot;: 40,
+  &quot;workers&quot;: 8,
+  &quot;users&quot;: 1000,
+  &quot;seed&quot;: 42,
+  &quot;sample_window_markers&quot;: true,
+  &quot;operations&quot;: {
+    &quot;portfolio&quot;: 40,
+    &quot;edit&quot;: 25,
+    &quot;valuation&quot;: 25,
+    &quot;latest&quot;: 8,
+    &quot;history&quot;: 2
+  },
+  &quot;rounds&quot;: 2,
+  &quot;jdk_build&quot;: &quot;27+35-2325&quot;,
+  &quot;timeout_seconds&quot;: 5,
+  &quot;fixture_sha256&quot;: &quot;c0aa93e19e0dead195427852c7743a5b31949e2bacc0ea1da41f9298fb94aae1&quot;,
+  &quot;postgres_version&quot;: &quot;18.7&quot;
+}</pre><h2>Candidates and raw evidence</h2>
+<h3>Jex + CoilBase + Jdbi + HikariCP · Round 1</h3><p>completed · <a href="round-01/jex-coilbase/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux / PRETTY_NAME=&quot;Debian GNU/Linux 13 (trixie)&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          470200      122372      128568         572      231744      347828</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Debian 18.7-1.pgdg13+5)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/benchmark/evidence/round-01/jex-coilbase/gc.log -jar /benchmark/bundles/jex-coilbase/portfolio-jex-coilbase.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.0.2.jar, avaje-http-api-3.12.1.jar, avaje-jex-3.6.jar, coilbase-core-0.1.0-preview5.jar, coilbase-jex-0.1.0-preview5.jar, postgresql-42.7.8.jar</p>
+<p><a href="round-01/jex-coilbase/environment/artifacts.txt">Bundle hashes</a> · <a href="round-01/jex-coilbase/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-01/jex-coilbase/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-01/jex-coilbase/guest/samples.jsonl">Guest samples</a> · <a href="round-01/jex-coilbase/load.json">Sustained slot observations</a> · <a href="round-01/jex-coilbase/inputs.json">Fixture and workload hashes</a></p>
+<h3>Quarkus REST + CoilBase + Jdbi + Agroal · Round 1</h3><p>completed · <a href="round-01/quarkus-coilbase/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux / PRETTY_NAME=&quot;Debian GNU/Linux 13 (trixie)&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          470200      126072       90296         572      266352      344128</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Debian 18.7-1.pgdg13+5)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/benchmark/evidence/round-01/quarkus-coilbase/gc.log -jar /benchmark/bundles/quarkus-coilbase/quarkus-app/quarkus-run.jar</p>
+<p><strong>Stack JARs</strong><br>io.agroal.agroal-pool-3.2.1.jar, io.quarkus.quarkus-rest-3.40.1.jar, org.postgresql.postgresql-42.7.13.jar, xyz.pvrlabs.coilbase-core-0.1.0-preview5.jar</p>
+<p><a href="round-01/quarkus-coilbase/environment/artifacts.txt">Bundle hashes</a> · <a href="round-01/quarkus-coilbase/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-01/quarkus-coilbase/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-01/quarkus-coilbase/guest/samples.jsonl">Guest samples</a> · <a href="round-01/quarkus-coilbase/load.json">Sustained slot observations</a> · <a href="round-01/quarkus-coilbase/inputs.json">Fixture and workload hashes</a></p>
+<h3>Spring Boot + Spring JDBC + HikariCP · Round 1</h3><p>completed · <a href="round-01/spring-boot/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux / PRETTY_NAME=&quot;Debian GNU/Linux 13 (trixie)&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          470200      125224      103828         572      253636      344976</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Debian 18.7-1.pgdg13+5)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/benchmark/evidence/round-01/spring-boot/gc.log -jar /benchmark/bundles/spring-boot/application.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.0.2.jar, postgresql-42.7.13.jar, spring-boot-4.1.1.jar, spring-jdbc-7.0.9.jar, tomcat-embed-core-11.0.24.jar</p>
+<p><a href="round-01/spring-boot/environment/artifacts.txt">Bundle hashes</a> · <a href="round-01/spring-boot/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-01/spring-boot/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-01/spring-boot/guest/samples.jsonl">Guest samples</a> · <a href="round-01/spring-boot/load.json">Sustained slot observations</a> · <a href="round-01/spring-boot/inputs.json">Fixture and workload hashes</a></p>
+<h3>Micronaut HTTP + Micronaut Data JDBC + HikariCP · Round 1</h3><p>completed · <a href="round-01/micronaut-data-jdbc/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux / PRETTY_NAME=&quot;Debian GNU/Linux 13 (trixie)&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          470200      122364      134640         572      225708      347836</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Debian 18.7-1.pgdg13+5)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/benchmark/evidence/round-01/micronaut-data-jdbc/gc.log -jar /benchmark/bundles/micronaut-data-jdbc/portfolio-micronaut-data-jdbc.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.1.0.jar, micronaut-data-jdbc-5.2.0.jar, micronaut-http-server-netty-5.2.11.jar, micronaut-jdbc-hikari-7.2.0.jar, postgresql-42.7.13.jar</p>
+<p><a href="round-01/micronaut-data-jdbc/environment/artifacts.txt">Bundle hashes</a> · <a href="round-01/micronaut-data-jdbc/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-01/micronaut-data-jdbc/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-01/micronaut-data-jdbc/guest/samples.jsonl">Guest samples</a> · <a href="round-01/micronaut-data-jdbc/load.json">Sustained slot observations</a> · <a href="round-01/micronaut-data-jdbc/inputs.json">Fixture and workload hashes</a></p>
+<h3>Jex + CoilBase + Jdbi + HikariCP · Round 2</h3><p>completed · <a href="round-02/jex-coilbase/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux / PRETTY_NAME=&quot;Debian GNU/Linux 13 (trixie)&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          470200      124432      144980         572      213308      345768</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Debian 18.7-1.pgdg13+5)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/benchmark/evidence/round-02/jex-coilbase/gc.log -jar /benchmark/bundles/jex-coilbase/portfolio-jex-coilbase.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.0.2.jar, avaje-http-api-3.12.1.jar, avaje-jex-3.6.jar, coilbase-core-0.1.0-preview5.jar, coilbase-jex-0.1.0-preview5.jar, postgresql-42.7.8.jar</p>
+<p><a href="round-02/jex-coilbase/environment/artifacts.txt">Bundle hashes</a> · <a href="round-02/jex-coilbase/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-02/jex-coilbase/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-02/jex-coilbase/guest/samples.jsonl">Guest samples</a> · <a href="round-02/jex-coilbase/load.json">Sustained slot observations</a> · <a href="round-02/jex-coilbase/inputs.json">Fixture and workload hashes</a></p>
+<h3>Quarkus REST + CoilBase + Jdbi + Agroal · Round 2</h3><p>completed · <a href="round-02/quarkus-coilbase/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux / PRETTY_NAME=&quot;Debian GNU/Linux 13 (trixie)&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          470200      120960      100464         572      261280      349240</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Debian 18.7-1.pgdg13+5)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/benchmark/evidence/round-02/quarkus-coilbase/gc.log -jar /benchmark/bundles/quarkus-coilbase/quarkus-app/quarkus-run.jar</p>
+<p><strong>Stack JARs</strong><br>io.agroal.agroal-pool-3.2.1.jar, io.quarkus.quarkus-rest-3.40.1.jar, org.postgresql.postgresql-42.7.13.jar, xyz.pvrlabs.coilbase-core-0.1.0-preview5.jar</p>
+<p><a href="round-02/quarkus-coilbase/environment/artifacts.txt">Bundle hashes</a> · <a href="round-02/quarkus-coilbase/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-02/quarkus-coilbase/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-02/quarkus-coilbase/guest/samples.jsonl">Guest samples</a> · <a href="round-02/quarkus-coilbase/load.json">Sustained slot observations</a> · <a href="round-02/quarkus-coilbase/inputs.json">Fixture and workload hashes</a></p>
+<h3>Spring Boot + Spring JDBC + HikariCP · Round 2</h3><p>completed · <a href="round-02/spring-boot/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux / PRETTY_NAME=&quot;Debian GNU/Linux 13 (trixie)&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          470200      124832      112636         572      245256      345368</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Debian 18.7-1.pgdg13+5)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/benchmark/evidence/round-02/spring-boot/gc.log -jar /benchmark/bundles/spring-boot/application.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.0.2.jar, postgresql-42.7.13.jar, spring-boot-4.1.1.jar, spring-jdbc-7.0.9.jar, tomcat-embed-core-11.0.24.jar</p>
+<p><a href="round-02/spring-boot/environment/artifacts.txt">Bundle hashes</a> · <a href="round-02/spring-boot/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-02/spring-boot/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-02/spring-boot/guest/samples.jsonl">Guest samples</a> · <a href="round-02/spring-boot/load.json">Sustained slot observations</a> · <a href="round-02/spring-boot/inputs.json">Fixture and workload hashes</a></p>
+<h3>Micronaut HTTP + Micronaut Data JDBC + HikariCP · Round 2</h3><p>completed · <a href="round-02/micronaut-data-jdbc/">Raw evidence directory</a></p>
+<p><strong>Host</strong><br>Linux benchmark-host 6.8.0-138-generic #138~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  7 13:43:15 UTC  x86_64 x86_64 x86_64 GNU/Linux / AMD Ryzen 7 4700U with Radeon Graphics</p>
+<p><strong>Guest</strong><br>Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux / PRETTY_NAME=&quot;Debian GNU/Linux 13 (trixie)&quot;</p>
+<p><strong>VM</strong><br>qemu, 1 vCPU, 512 MiB allocated</p>
+<p><strong>Guest memory</strong><br>Mem:          470200      128060      131620         572      223012      342140</p>
+<p><strong>Guest swap</strong><br>Swap:              0           0           0</p>
+<p><strong>JDK</strong><br>openjdk version &quot;27&quot; 2026-09-15
+OpenJDK Runtime Environment (build 27+35-2325)
+OpenJDK 64-Bit Server VM (build 27+35-2325, mixed mode, sharing)</p>
+<p><strong>PostgreSQL</strong><br>18.7 (Debian 18.7-1.pgdg13+5)</p>
+<p><strong>JVM flags</strong><br>-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC</p>
+<p><strong>Java launch</strong><br>/opt/boot27/bin/java -Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC -Xlog:gc:file=/benchmark/evidence/round-02/micronaut-data-jdbc/gc.log -jar /benchmark/bundles/micronaut-data-jdbc/portfolio-micronaut-data-jdbc.jar</p>
+<p><strong>Stack JARs</strong><br>HikariCP-7.1.0.jar, micronaut-data-jdbc-5.2.0.jar, micronaut-http-server-netty-5.2.11.jar, micronaut-jdbc-hikari-7.2.0.jar, postgresql-42.7.13.jar</p>
+<p><a href="round-02/micronaut-data-jdbc/environment/artifacts.txt">Bundle hashes</a> · <a href="round-02/micronaut-data-jdbc/guest/postgres-settings.txt">Effective PostgreSQL settings</a> · <a href="round-02/micronaut-data-jdbc/guest/effective-jvm-flags.txt">Effective JVM flags</a> · <a href="round-02/micronaut-data-jdbc/guest/samples.jsonl">Guest samples</a> · <a href="round-02/micronaut-data-jdbc/load.json">Sustained slot observations</a> · <a href="round-02/micronaut-data-jdbc/inputs.json">Fixture and workload hashes</a></p>
+</body></html>

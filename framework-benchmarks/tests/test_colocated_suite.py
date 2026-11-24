@@ -135,19 +135,23 @@ class SuiteTest(unittest.TestCase):
 
             with patch.object(suite.platform, 'node', return_value='benchmark-host'), \
                  patch.object(suite.platform, 'system', return_value='Linux'), \
-                 patch.object(suite.runner, 'main', side_effect=run_candidate):
+                 patch.object(suite.runner, 'main', side_effect=run_candidate), \
+                 patch.object(suite, 'verify_guest_storage') as verify_storage:
                 self.assertTrue(suite.run_suite(output, {key: '/'+key for key in roster},
                                                 'vm', '/runs', version='v1'))
+            verify_storage.assert_called_once_with('vm', '/runs')
             self.assertEqual(calls, [(f'round-{number:02d}', key) for number, key in expected])
             manifest = output/'suite.json'
             original = manifest.read_bytes()
             html = (output/'report.html').read_bytes()
+            (output/'featured.svg').write_text('stale chart')
             with patch.object(suite.runner, 'main', side_effect=AssertionError('benchmark launched')):
                 recorded = suite.regenerate(manifest)
             self.assertEqual([(c['round'], c['id']) for c in recorded['candidates']], expected)
             self.assertEqual(manifest.read_bytes(), original)
             self.assertEqual((output/'report.html').read_bytes(), html)
-            self.assertIn('jex-coilbase · Round 2'.encode(), html)
+            self.assertIn('Jex + Jdbi · Round 2'.encode(), html)
+            self.assertFalse((output/'featured.svg').exists())
             self.assertEqual(recorded['protocol']['id'], 'v1')
             self.assertEqual(recorded['protocol']['fixture_sha256'], suite.PUBLIC_FIXTURE_SHA256)
             recorded['candidates'].pop()

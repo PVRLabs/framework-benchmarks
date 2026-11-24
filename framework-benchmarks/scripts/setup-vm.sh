@@ -29,8 +29,8 @@ bash "$here/prepare-postgres.sh"
 swapoff -a
 sed -i.bak '/^[^#].*[[:space:]]swap[[:space:]]/s/^/# framework-benchmarks no swap: /' /etc/fstab
 mkdir -p /opt/boot27
-echo '95fc37eb3a18a27a26d5904c2d89d52bace8dafa9a078ca27f4747fbc4bf070b  /tmp/fb-jdk.tar.gz' | sha256sum -c -
-tar -xzf /tmp/fb-jdk.tar.gz -C /opt/boot27 --strip-components=1
+echo '95fc37eb3a18a27a26d5904c2d89d52bace8dafa9a078ca27f4747fbc4bf070b  /var/tmp/fb-jdk.tar.gz' | sha256sum -c -
+tar -xzf /var/tmp/fb-jdk.tar.gz -C /opt/boot27 --strip-components=1
 echo manual > /etc/postgresql/18/main/start.conf
 systemctl disable --now postgresql.service postgresql@18-main.service
 python3 "$here/benchmark-preflight.py" --require-debian-13 --cpus 1 --min-mem-kib 440001 --max-mem-kib 524287

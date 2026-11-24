@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/opt/boot27/bin/java",
+    "-Xms16m",
+    "-Xmx80m",
+    "-XX:+UseG1GC",
+    "-Duser.timezone=UTC",
+    "-Xlog:gc:file=/benchmark/evidence/round-01/jex-coilbase/gc.log",
+    "-jar",
+    "/benchmark/bundles/jex-coilbase/portfolio-jex-coilbase.jar"
+  ],
+  "environment": {
+    "SERVER_PORT": "8080",
+    "MARKET_DB_URL": "jdbc:postgresql://127.0.0.1:5432/fb_baseline",
+    "MARKET_DB_USER": "fb_baseline",
+    "PORTFOLIO_SEED_USERS": "1000",
+    "MARKET_FIXTURE_URL": "http://127.0.0.1:8090/quotes",
+    "MARKET_POLL_ENABLED": "true",
+    "MARKET_POLL_INTERVAL_MS": "60000",
+    "MARKET_POLL_INITIAL_DELAY_MS": "0"
+  }
+}

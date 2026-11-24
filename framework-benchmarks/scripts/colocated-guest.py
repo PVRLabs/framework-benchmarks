@@ -21,7 +21,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--bundle', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
-    p.add_argument('--candidate', choices=['jex-coilbase', 'quarkus-coilbase', 'spring-boot', 'micronaut-data-jdbc'], default='jex-coilbase')
+    p.add_argument('--candidate', choices=['jex-coilbase', 'quarkus-coilbase', 'spring-boot'], default='jex-coilbase')
     p.add_argument('--fixture-url', default='http://127.0.0.1:8090/quotes')
     p.add_argument('--idle-seconds', type=int, default=30)
     p.add_argument('--stabilize-seconds', type=int, default=10)
@@ -99,6 +99,7 @@ def main():
         assert not sp.run(['pgrep','-x','postgres'],stdout=sp.DEVNULL).returncode == 0
         os_check = ['--require-debian-13'] if a.require_debian_13 else []
         capture('preflight.txt','python3',str(a.bundle/'benchmark-preflight.py'),
+                '--evidence-path',str(out),'--evidence-path',str(a.bundle),
                 '--cpus','1','--min-mem-kib','440001','--max-mem-kib','524287',*os_check)
         mem = Path('/proc/meminfo').read_text()
         assert int(next(x.split()[1] for x in mem.splitlines() if x.startswith('SwapTotal:'))) == 0
@@ -126,8 +127,7 @@ def main():
                 "SELECT name,setting,unit,source FROM pg_settings ORDER BY name")
         phase = 'postgres-only'
         time.sleep(3)
-        jars = {'jex-coilbase':'portfolio-jex-coilbase.jar','quarkus-coilbase':'quarkus-app/quarkus-run.jar','spring-boot':'application.jar',
-                'micronaut-data-jdbc':'portfolio-micronaut-data-jdbc.jar'}
+        jars = {'jex-coilbase':'portfolio-jex-coilbase.jar','quarkus-coilbase':'quarkus-app/quarkus-run.jar','spring-boot':'application.jar'}
         command = ['/opt/boot27/bin/java',*FLAGS,'-Xlog:gc:file='+str(out/'gc.log'),'-jar',str(a.bundle/jars[a.candidate])]
         env = dict(os.environ, SERVER_PORT='8080', MARKET_DB_URL='jdbc:postgresql://127.0.0.1:5432/fb_baseline',
                    MARKET_DB_USER='fb_baseline', MARKET_DB_PASSWORD='fb_baseline', PORTFOLIO_SEED_USERS='1000',

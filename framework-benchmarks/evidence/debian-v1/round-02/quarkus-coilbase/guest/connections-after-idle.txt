@@ -1,0 +1,8 @@
+   usename   | state  | count 
+-------------+--------+-------
+ fb_baseline | idle   |     2
+ postgres    | active |     1
+ postgres    |        |     1
+             |        |     7
+(4 rows)
+

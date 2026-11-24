@@ -1,0 +1,5 @@
+Linux benchmark-guest 6.12.95+deb13-cloud-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1 (2026-07-04) x86_64 GNU/Linux
+Hypervisor vendor:                       KVM
+Mem:          470200      126072       90296         572      266352      344128
+Swap:              0           0           0
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
