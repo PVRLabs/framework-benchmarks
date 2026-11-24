@@ -8,9 +8,9 @@ behavior before measurement.
 
 ## Initial v1 candidates
 
-- Jex + Jdbi
-- Quarkus + Jdbi
-- Spring Boot + JDBC
+- [Jex + Jdbi](framework-benchmarks/jex-coilbase/README.md)
+- [Quarkus + Jdbi](framework-benchmarks/quarkus-coilbase/README.md)
+- [Spring Boot + JDBC](market-replay-portfolio/app/)
 - [Micronaut Data JDBC](framework-benchmarks/micronaut-data-jdbc/README.md)
 
 The implementations use Jex + CoilBase + Jdbi + HikariCP, Quarkus REST +
@@ -28,7 +28,7 @@ access, transactions, and background processing.
 All four use the same PostgreSQL schema, correctness contract, and public
 synthetic replay. The featured results below use the accepted Debian 13 suite. See the [v1 suite guide](framework-benchmarks/suite-v1.md).
 
-## Featured benchmark — Debian 13 v1
+## Featured benchmark — v1
 
 The accepted comparison ran two rounds on a Debian 13 QEMU/KVM guest on an
 AMD Ryzen 7 4700U Linux host. The guest had 1 vCPU, 512 MiB RAM and no swap.
