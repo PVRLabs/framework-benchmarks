@@ -67,7 +67,8 @@ Fork the repository, customize the JVM settings, and run the same benchmark
 protocol. Share your configuration and results in a GitHub issue or pull request.
 
 [Fork this repository](https://github.com/PVRLabs/framework-benchmarks/fork) ·
-[Custom runs guide](framework-benchmarks/custom-runs.md)
+[Run locally](framework-benchmarks/custom-runs.md#run-locally) ·
+[Run with GitHub Actions](framework-benchmarks/custom-runs.md#run-with-github-actions)
 
 ### Why CoilBase instead of Hibernate in Quarkus?
 
@@ -216,7 +217,10 @@ works with the archived pre-release manifest.
 
 ## Future comparisons
 
-The project will support additional framework implementations, runtimes,
-languages, and benchmark configurations (flavors). Possible comparisons
-include Helidon, additional Quarkus configurations, OpenJ9, and GraalVM Native
-Image. How flavors will be organized and selected is still open.
+See the [branch strategy for benchmark experiments](framework-benchmarks/branch-strategy.md)
+for how we develop and publish new comparisons.
+
+We’ll explore additional frameworks, runtimes, and languages in experiment
+branches. Possible comparisons include Helidon, other Quarkus configurations,
+OpenJ9, and GraalVM Native Image. The maintained reference benchmark lives on
+`main`.

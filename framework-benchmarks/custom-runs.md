@@ -1,48 +1,70 @@
-# Customize JVM settings for benchmark runs
+# Try your own JVM settings
 
-Start community experiments in a fork. For controlled measurements, run the
-baseline and variant on the same dedicated host and guest. The
-[accepted Debian 13 report](evidence/debian-v1/report.html) shows the published setup.
+Pick one question, such as “Does a smaller heap reduce memory without increasing
+tail latency?” Change one setting at a time if you want to isolate its effect.
 
-## Test JVM settings in your fork
+## Run with GitHub Actions
+
+This is the easiest setup if you don’t have benchmark hardware. Hosted runner
+hardware and load can vary, so use these results to explore an idea.
 
 1. Open [PVRLabs/framework-benchmarks](https://github.com/PVRLabs/framework-benchmarks)
-   and click **Fork**.
-2. Open your fork's **Actions** tab and enable workflows if prompted.
+   and click **Fork**. Enable workflows in your fork’s **Actions** tab if prompted.
+2. Run a baseline before editing the config. Open **Actions → JVM Benchmark →
+   Run workflow**, select your branch, and start the run. If your fork already
+   has custom settings, use a branch with the upstream config for the baseline.
 3. In your fork, open `framework-benchmarks/config-v1.json`, click the pencil
-   icon, edit the `jvm` array, and commit the change in GitHub. A push changing
-   that file triggers the [JVM Benchmark workflow](../.github/workflows/benchmark.yml)
-   on a GitHub-hosted Ubuntu runner. If your settings are already committed,
-   choose **Actions → JVM Benchmark → Run workflow** and select their branch.
-4. Open **Actions → JVM Benchmark** and select your run. The
-   **Run preparation and benchmark measurements** step prints a short
-   preparation summary first and the fresh benchmark results after measurement.
-   Use the preparation summary to check that the JVM starts with your settings.
-   Under **Artifacts**, download `benchmark-results-<run number>-<attempt>`.
-   Extract the archive and open `measurement/report.html` or
-   `measurement/featured.svg`. Keep the manifest and evidence directories
-   alongside them so the report links work.
+   icon, edit the `jvm` array (see [Example JVM settings](#example-jvm-settings)),
+   and commit. That commit starts **JVM Benchmark**
+   automatically. You can also run it manually with any committed settings.
+4. Open the benchmark run. Expand **Run preparation and benchmark measurements**
+   for the results table. Under **Artifacts**, download
+   `benchmark-results-<run number>-<attempt>` and open `measurement/report.html`
+   after extraction. The chart, manifest, and evidence are alongside it.
 
-The eight measured runs spend about 49 minutes in the scheduled phases, plus
-time for setup, preparation, startup, and artifact upload. **Correctness CI**
-runs separately and produces no fresh performance measurements. Use GitHub-hosted
-results to explore a JVM change and dedicated hardware to compare against the
-published measurements.
+Preparation gives an early check that the apps start with your JVM settings.
+Full measurement takes about 49 minutes plus setup and preparation.
+**Correctness CI** uploads historical evidence under `archived-v1-report-…`.
+Your fresh measurements appear under `benchmark-results-…` in **JVM Benchmark**.
 
-## Try the four community-suggested flags
+## Run locally
 
-Upstream [config-v1.json](config-v1.json) contains the frozen v1 JVM settings.
-Changes to the official protocol should introduce a new version.
+For a controlled comparison, use any checkout on an x86-64 Linux host with
+KVM. Follow the [v1 suite guide](suite-v1.md) to prepare the VM and deploy the
+applications once. Rebuild and redeploy reused bundles after pulling runner
+changes so they contain the guest runner from your current checkout.
 
-For exploratory runs, edit `config-v1.json` directly in your fork and run the
-suite without `--config`, or pass a separate configuration with `--config`.
-For the separate-file option, copy the default and replace its `jvm` array
-with the array below.
+From the repository root, make a config copy for the variant:
 
 ```sh
 mkdir -p work
-cp framework-benchmarks/config-v1.json work/v1-jvm.json
+cp framework-benchmarks/config-v1.json work/my-jvm.json
 ```
+
+Edit the copy (see [Example JVM settings](#example-jvm-settings)). Start with
+a short baseline preparation run using the upstream config.
+
+```sh
+python3 framework-benchmarks/scripts/colocated-suite.py run --vm fb-debian-v1 \
+  --guest-run-root /var/tmp/fb-runs --preparation --output work/v1-baseline-prep \
+  --bundle jex-coilbase=/var/tmp/fb-v1-review/jex-coilbase \
+  --bundle quarkus-coilbase=/var/tmp/fb-v1-review/quarkus-coilbase \
+  --bundle spring-boot=/var/tmp/fb-v1-review/spring-boot \
+  --bundle micronaut-data-jdbc=/var/tmp/fb-v1-review/micronaut-data-jdbc
+```
+
+For variant preparation, repeat with `--config work/my-jvm.json` and
+`--output work/v1-variant-prep`. Once both checks pass, repeat each command
+without `--preparation` using fresh output directories `work/v1-baseline`
+and `work/v1-variant`. Reuse the same host, guest, and bundles.
+
+Regenerate reports only from your own experiment outputs under `work/`.
+For example, run
+`python3 framework-benchmarks/scripts/colocated-suite.py report work/v1-variant/suite.json`.
+
+## Example JVM settings
+
+Keep the stock arguments and add the four options below to try them together.
 
 ```json
 [
@@ -57,91 +79,44 @@ cp framework-benchmarks/config-v1.json work/v1-jvm.json
 ]
 ```
 
-Check the flags with `-XX:+PrintFlagsFinal -version` on the guest's Java
-executable before running the suite. `TrimNativeHeapInterval` requires
-HotSpot on Linux with glibc. `G1PeriodicGCInterval` requires G1. Both intervals
-are in milliseconds. The free ratios are percentages used when resizing the heap.
+`TrimNativeHeapInterval` requires HotSpot on Linux with glibc.
+`G1PeriodicGCInterval` requires G1. Both intervals are in milliseconds.
+The free ratios guide heap resizing and are percentages. Check the JVM arguments
+in the report or in each run’s `guest/effective-jvm-flags.txt`.
 [OpenJDK Java options](https://github.com/openjdk/jdk/blob/master/src/java.base/share/man/java.md)
 · [JEP 346](https://openjdk.org/jeps/346)
 
-## Run locally on dedicated hardware
-
-1. Follow the [VM setup and correctness instructions](../README.md#vm-setup)
-   and the [v1 suite guide](suite-v1.md). Use the pinned Debian image,
-   PostgreSQL package, and HotSpot build. Record the source commit, build
-   toolchain, and JAR and dependency hashes. Check the application versions
-   against the accepted report and its artifact manifests if reproducing the
-   published comparison.
-2. Use the suite guide's bundle preparation and run commands with the stock
-   JVM flags, `-Xms16m -Xmx80m -XX:+UseG1GC -Duser.timezone=UTC`. Use
-   `--preparation --output work/v1-baseline-prep` for the short smoke suite.
-   Review all four candidates in both rounds, including cleanup. Then drop
-   `--preparation` and use `--output work/v1-baseline` for measurement.
-
-Reuse the four guest bundles from the baseline. They must include the guest
-runner from this checkout. Run a short preparation suite first.
-
-```sh
-python3 framework-benchmarks/scripts/colocated-suite.py run --vm fb-debian-v1 \
-  --guest-run-root /var/tmp/fb-runs \
-  --config work/v1-jvm.json --preparation --output work/v1-jvm-prep \
-  --bundle jex-coilbase=/var/tmp/fb-v1-review/jex-coilbase \
-  --bundle quarkus-coilbase=/var/tmp/fb-v1-review/quarkus-coilbase \
-  --bundle spring-boot=/var/tmp/fb-v1-review/spring-boot \
-  --bundle micronaut-data-jdbc=/var/tmp/fb-v1-review/micronaut-data-jdbc
-```
-
-Check each candidate's `guest/launch.json` and `guest/effective-jvm-flags.txt`.
-For measurement, drop `--preparation` and use `--output work/v1-jvm`.
-The suite labels a run as custom when its JVM settings differ from the frozen
-values, whether you edited the fork's file or used `--config`. The other two
-fields are `java_executable`, an absolute path inside the guest, and `jdk_build`,
-the expected build identifier from that executable's `-version` output.
+The upstream [config-v1.json](config-v1.json) holds the frozen JVM defaults.
+For local runs with another JDK build, install it inside the Debian benchmark
+VM. Set `java_executable` to its absolute path inside that VM and `jdk_build`
+to the identifier reported by `<java_executable> -version` inside the VM.
+GitHub Actions provisions its
+own Debian VM with the pinned JDK. Testing a different build there requires
+changing the workflow’s VM setup as well as the config.
 
 ## Compare results
 
-Reuse the same physical host, guest image and resources, kernel, storage,
-PostgreSQL settings, pool size, and JDK build. Match host activity and guest
-boot and cache conditions as closely as possible. Compare application JAR and
-dependency hashes in `environment/artifacts.txt` and verify the workload and
-synthetic replay hashes in `inputs.json`. Keep the database reset and seed,
-replay cadence, request mix and schedule, timeouts, phase lengths, and
-two-round candidate order from the [v1 protocol](protocol-v1.md).
-
-The suite writes `report.html` alongside `suite.json` and a `featured.svg`
-for a complete measurement suite. The manifest embeds the effective
-JVM settings under `protocol`. The manifest's `configuration_sha256` covers
-only `java_executable`, `jdk_build`, and `jvm`, serialized as compact JSON
-with sorted keys and non-ASCII characters escaped. Custom charts show the
-first 12 characters of this hash.
-Keep the entire evidence directory together to regenerate its report offline.
-
-```sh
-python3 framework-benchmarks/scripts/colocated-suite.py report work/v1-baseline/suite.json
-python3 framework-benchmarks/scripts/colocated-suite.py report work/v1-jvm/suite.json
-```
-
-Custom reports use the effective settings from their manifest. To regenerate the
-accepted report, use the [README's copy-and-compare command](../README.md#regenerate-the-featured-report-and-chart).
-Keep experiment outputs under fresh `work/`
-paths and leave the accepted evidence directories and README chart in place.
-
-Compare each stack in both rounds against the local baseline. First check
-acceptance, achieved throughput, errors, timeouts, unsent requests, and OOMs.
-Then compare readiness, sustained p95 and p99, peak application RSS, and
-minimum guest MemAvailable. The four-flag example measures their combined
-effect. Run separate, labeled experiments if you want to isolate individual
-flags.
+Compare the baseline and variant for the same application in each round.
+Check for errors, timeouts, unsent requests, and OOMs first. Then compare
+readiness, peak app RSS, sustained p99 latency, and minimum guest MemAvailable.
+Save both reports and their evidence, and note any changes in host or runner
+hardware or JDK. The manifest records `java_executable`, `jdk_build`, and
+`jvm` and their combined SHA-256 hash.
 
 ## Share results
 
-Share findings in a
+Share your question, config diff, report links, and what you observed in a
 [GitHub issue](https://github.com/PVRLabs/framework-benchmarks/issues) or
-propose a reproducible change through a
 [pull request](https://github.com/PVRLabs/framework-benchmarks/pulls).
-Include the source commit and configuration diff, build and run commands,
-host and guest details, artifact and input hashes, and baseline and experiment
-reports or links to the raw evidence. Summarize the per-round measurements,
-any failed runs or deviations, and the conclusions the data supports.
 
-Alternative runtimes such as GraalVM Native Image are possible future extensions.
+## Optional: add an application
+
+Adding an app requires changes to the application code and runner. Use an existing candidate such as
+[Micronaut](micronaut-data-jdbc/README.md) as a starting point. Implement the
+[shared correctness contract](foundation.md#shared-correctness-requirements)
+against the same PostgreSQL schema and replay fixture. First build the app
+and pass the correctness checks. Then wire its bundle and launch command into
+the suite and guest runner, and add its build and deployment steps to the
+[benchmark workflow](../.github/workflows/benchmark.yml) if you want to run it
+on GitHub. Run preparation before collecting measurements and share the runner
+changes along with the results.
