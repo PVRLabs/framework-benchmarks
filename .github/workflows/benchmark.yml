@@ -25,6 +25,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+      - name: Validate fork JVM configuration
+        run: PYTHONPATH=framework-benchmarks/scripts python3 -c 'import benchmark_config; benchmark_config.load()'
       - name: Enable KVM and install QEMU and Lima
         run: |
           test "$(uname -m)" = x86_64
@@ -107,7 +109,7 @@ jobs:
       - name: Run preparation and benchmark measurements
         run: |
           suite=(python3 framework-benchmarks/scripts/colocated-suite.py run
-            --vm "$BENCHMARK_VM" --guest-run-root /var/tmp/fb-runs)
+            --fail-fast --vm "$BENCHMARK_VM" --guest-run-root /var/tmp/fb-runs)
           for candidate in jex-coilbase quarkus-coilbase spring-boot micronaut-data-jdbc; do
             suite+=(--bundle "$candidate=$BENCHMARK_BUNDLES/$candidate")
           done

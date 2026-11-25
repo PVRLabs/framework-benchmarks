@@ -666,7 +666,7 @@ def verify_guest_storage(vm, guest_root):
           f'Found {filesystem or "no mount"}. Use /var/tmp/fb-runs on the Debian guest.')
 
 
-def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-mvp', config_path=None):
+def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-mvp', config_path=None, fail_fast=False):
     if config_path is not None:
         version = 'v1'
     stacks = FOUR_CANDIDATE_STACKS if version == 'v1' else STACKS
@@ -738,6 +738,9 @@ def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-m
             # Checkpoint each candidate while preserving pending runs.
             candidates[index] = inspect_candidate(output, candidate, settings)
             persist(manifest, suite)
+            if fail_fast and candidates[index]['status'] != 'completed':
+                print(f"Stopping after {candidate_label(candidate)}: {candidates[index]['failures']}", flush=True)
+                break
     finally:
         signal.signal(signal.SIGTERM, previous)
         persist(manifest, suite)
@@ -756,6 +759,7 @@ def main():
     run.add_argument('--bundle', action='append', required=True, metavar='CANDIDATE=/GUEST/PATH')
     run.add_argument('--protocol', choices=('v1',), default='v1')
     run.add_argument('--config', type=Path, help='JSON configuration for a custom v1 experiment')
+    run.add_argument('--fail-fast', action='store_true', help='Stop after the first unsuccessful candidate')
     run.add_argument('--preparation', action='store_true')
     report = commands.add_parser('report')
     report.add_argument('manifest', type=Path)
@@ -778,7 +782,7 @@ def main():
         run.error('Expected exactly one bundle for each of: ' + ', '.join(stacks))
     try:
         return run_suite(args.output, bundles, args.vm, args.guest_run_root,
-                         args.preparation, args.protocol, args.config)
+                         args.preparation, args.protocol, args.config, args.fail_fast)
     except ValueError as exc:
         run.error(str(exc))
 
