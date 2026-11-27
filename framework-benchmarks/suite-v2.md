@@ -1,14 +1,47 @@
-# Framework Benchmarks v2 development suite
+# Framework Benchmarks v2 suite
 
 Run Jex, Quarkus, Spring Boot, and Micronaut in that order in each of two rounds.
 Every run uses the public synthetic replay. The runner records and checks the
 fixture and workload hashes. The [pre-release archive](evidence/v1-accepted/)
 contains the earlier three-candidate comparison using historical prices.
 
-Follow the [v2 development protocol](protocol-v2-development.md) for JVM flags, PostgreSQL settings,
+Follow the [v2 protocol](protocol-v2.md) for JVM flags, PostgreSQL settings,
 pool cap, phases, traffic, sampling, and acceptance criteria. All four
 candidates run sequentially on one Linux QEMU/KVM Debian 13 guest with one vCPU,
 512 MiB, no swap, PostgreSQL 18.7 and OpenJDK HotSpot 27+35-2325.
+
+The [v2 reference results](evidence/v2-reference/README.md) reuse the completed
+eight-run Xmx80m dataset; its original external CPU sampling differs from the
+current runner instrumentation.
+
+## JVM heap selection
+
+All four application stacks use the same JVM heap settings: `-Xms16m -Xmx80m`
+with G1GC.
+
+We evaluated a 70 MiB maximum heap over two rounds of the same 100 RPS
+workload. All eight runs completed without request errors, timeouts, dropped
+requests or OOM kills. Sampled peak application RSS fell by approximately
+4–8 MiB per stack on average. Cumulative sustained-window GC pause time
+increased for all four stacks on average, and the longest observed pause
+increased for three stacks.
+
+The table shows the longest observed GC pause across both 185-second sustained
+measurement windows for each configuration.
+
+| Stack | Longest pause at Xmx80m | Longest pause at Xmx70m |
+|---|---:|---:|
+| Jex | 10.88 ms | 13.46 ms |
+| Quarkus | 20.79 ms | 15.06 ms |
+| Spring Boot | 25.76 ms | 32.82 ms |
+| Micronaut | 4.38 ms | 16.08 ms |
+
+Sustained p99 latency remained broadly comparable. We retained the 80 MiB
+maximum heap as a conservative trade-off between memory footprint, GC behavior
+and application headroom. The 70 MiB runs included the new guest CPU counter
+instrumentation, which the 80 MiB comparison runs did not; both used external
+CPU sampling. These results demonstrate feasibility at 70 MiB under the tested
+workload, not long-term stability or a minimum heap requirement.
 
 ## Prepare on the Linux host
 

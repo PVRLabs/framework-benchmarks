@@ -6,7 +6,7 @@ memory consumption, throughput, and latency with equivalent applications, shared
 workloads, and documented environments. Correctness checks establish comparable
 behavior before measurement.
 
-## Initial v1 candidates
+## Reference candidates
 
 - [Jex + Jdbi](framework-benchmarks/jex-coilbase/README.md)
 - [Quarkus + Jdbi](framework-benchmarks/quarkus-coilbase/README.md)
@@ -26,29 +26,28 @@ and periodic market price ingestion. These operations exercise HTTP, database
 access, transactions, and background processing.
 
 All four use the same PostgreSQL schema, correctness contract, and public
-synthetic replay. The featured results below use the accepted Debian 13 suite. See the [v1 suite guide](framework-benchmarks/suite-v1.md) and use the `benchmark-v1` tagged checkout to reproduce them.
+synthetic replay. See the [v2 suite guide](framework-benchmarks/suite-v2.md).
 
-## Featured benchmark — v1
+## Featured benchmark — v2
 
-The accepted comparison ran two rounds on a Debian 13 QEMU/KVM guest on an
-AMD Ryzen 7 4700U Linux host. The guest had 1 vCPU, 512 MiB RAM and no swap.
-Each application shared the guest with PostgreSQL 18.7
-(`18.7-1.pgdg13+5`). Both rounds used HotSpot 27 (build `27+35-2325`).
-Measurement evidence was written to ext4. All eight runs sustained 40 RPS
+The reference comparison ran two rounds on a Debian 13 QEMU/KVM guest on an
+AMD Ryzen 7 4700U Linux host. The guest had one vCPU, 512 MiB RAM and no swap.
+Each application shared the guest with PostgreSQL 18.7 and used HotSpot 27
+(build `27+35-2325`), G1 and `-Xmx80m`. All eight runs sustained 100 RPS
 with zero workload errors, timeouts, unsent requests or OOM kills.
 
-![Debian 13 v1 results for all four stacks, with separate bars for each round.](docs/featured-v1.svg)
+![Debian 13 v2 results for all four stacks, with separate bars for each round.](docs/featured-v2.svg)
 
 | Stack | Round | App readiness (s) | Peak app RSS (MiB) | Sustained p99 (ms) | Min guest MemAvailable (MiB) |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Jex + Jdbi | 1 | 4.64 | 148.16 | 11.03 | 202.43 |
-| Quarkus + Jdbi | 1 | 5.93 | 200.23 | 11.26 | 150.56 |
-| Spring Boot + JDBC | 1 | 10.64 | 233.29 | 11.43 | 119.36 |
-| Micronaut Data JDBC | 1 | 7.36 | 209.86 | 11.13 | 142.98 |
-| Jex + Jdbi | 2 | 4.87 | 149.96 | 11.02 | 196.95 |
-| Quarkus + Jdbi | 2 | 6.05 | 205.49 | 11.05 | 147.02 |
-| Spring Boot + JDBC | 2 | 10.82 | 221.73 | 11.51 | 126.95 |
-| Micronaut Data JDBC | 2 | 7.72 | 219.40 | 11.38 | 128.29 |
+| Jex + Jdbi | 1 | 5.10 | 149.91 | 8.35 | 197.59 |
+| Quarkus + Jdbi | 1 | 6.04 | 208.14 | 9.12 | 138.15 |
+| Spring Boot + JDBC | 1 | 10.96 | 231.27 | 10.40 | 109.58 |
+| Micronaut Data JDBC | 1 | 7.54 | 217.11 | 8.97 | 125.28 |
+| Jex + Jdbi | 2 | 5.06 | 156.97 | 10.48 | 189.57 |
+| Quarkus + Jdbi | 2 | 5.89 | 209.69 | 8.99 | 133.31 |
+| Spring Boot + JDBC | 2 | 11.07 | 232.27 | 10.09 | 112.77 |
+| Micronaut Data JDBC | 2 | 7.99 | 219.26 | 8.75 | 123.66 |
 
 Readiness measures application launch to a successful database-backed check.
 The memory figures are sampled sustained-phase extrema. Sustained p99 includes
@@ -56,10 +55,10 @@ client scheduling and SSH transport.
 
 | Stack | HTTP framework | Persistence | Connection pool | PostgreSQL JDBC | Artifact manifests |
 | --- | --- | --- | --- | --- | --- |
-| Jex + Jdbi | Avaje Jex 3.6, Avaje HTTP 3.12.1 | CoilBase Core and Jex adapter 0.1.0-preview5, Jdbi 3.55.0 | HikariCP 7.0.2 | 42.7.8 | [R1](framework-benchmarks/evidence/debian-v1/round-01/jex-coilbase/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/jex-coilbase/environment/artifacts.txt) |
-| Quarkus + Jdbi | Quarkus REST 3.40.1 | CoilBase Core 0.1.0-preview5, Jdbi 3.55.0 | Agroal 3.2.1 | 42.7.13 | [R1](framework-benchmarks/evidence/debian-v1/round-01/quarkus-coilbase/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/quarkus-coilbase/environment/artifacts.txt) |
-| Spring Boot + JDBC | Spring Boot 4.1.1, Tomcat 11.0.24 | Spring JDBC 7.0.9 | HikariCP 7.0.2 | 42.7.13 | [R1](framework-benchmarks/evidence/debian-v1/round-01/spring-boot/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/spring-boot/environment/artifacts.txt) |
-| Micronaut Data JDBC | Micronaut HTTP Server Netty 5.2.11 | Micronaut Data JDBC 5.2.0 | Micronaut JDBC Hikari 7.2.0, HikariCP 7.1.0 | 42.7.13 | [R1](framework-benchmarks/evidence/debian-v1/round-01/micronaut-data-jdbc/environment/artifacts.txt), [R2](framework-benchmarks/evidence/debian-v1/round-02/micronaut-data-jdbc/environment/artifacts.txt) |
+| Jex + Jdbi | Avaje Jex 3.6, Avaje HTTP 3.12.1 | CoilBase Core and Jex adapter 0.1.0-preview5, Jdbi 3.55.0 | HikariCP 7.0.2 | 42.7.8 | [R1](framework-benchmarks/evidence/v2-reference/round-01/jex-coilbase/environment/artifacts.txt), [R2](framework-benchmarks/evidence/v2-reference/round-02/jex-coilbase/environment/artifacts.txt) |
+| Quarkus + Jdbi | Quarkus REST 3.40.1 | CoilBase Core 0.1.0-preview5, Jdbi 3.55.0 | Agroal 3.2.1 | 42.7.13 | [R1](framework-benchmarks/evidence/v2-reference/round-01/quarkus-coilbase/environment/artifacts.txt), [R2](framework-benchmarks/evidence/v2-reference/round-02/quarkus-coilbase/environment/artifacts.txt) |
+| Spring Boot + JDBC | Spring Boot 4.1.1, Tomcat 11.0.24 | Spring JDBC 7.0.9 | HikariCP 7.0.2 | 42.7.13 | [R1](framework-benchmarks/evidence/v2-reference/round-01/spring-boot/environment/artifacts.txt), [R2](framework-benchmarks/evidence/v2-reference/round-02/spring-boot/environment/artifacts.txt) |
+| Micronaut Data JDBC | Micronaut HTTP Server Netty 5.2.11 | Micronaut Data JDBC 5.2.0 | Micronaut JDBC Hikari 7.2.0, HikariCP 7.1.0 | 42.7.13 | [R1](framework-benchmarks/evidence/v2-reference/round-01/micronaut-data-jdbc/environment/artifacts.txt), [R2](framework-benchmarks/evidence/v2-reference/round-02/micronaut-data-jdbc/environment/artifacts.txt) |
 
 ### Try your own JVM settings
 
@@ -90,17 +89,17 @@ Readers interested in Hibernate or another persistence approach are welcome to
 reproduce the benchmark and submit a proposal or PR with supporting measurements.
 Additions should answer a specific comparison question.
 
-See the [full HTML report](framework-benchmarks/evidence/debian-v1/report.html),
-[recorded evidence](framework-benchmarks/evidence/debian-v1/suite.json), and
-[frozen v1 protocol](framework-benchmarks/protocol-v1.md).
-The [three-stack Ubuntu pre-release report](framework-benchmarks/evidence/v1-accepted/report.html)
-remains archived with its own evidence.
+See the [v2 reference report](framework-benchmarks/evidence/v2-reference/README.md),
+[measurements and provenance](framework-benchmarks/evidence/v2-reference/measurements.json),
+and [v2 protocol](framework-benchmarks/protocol-v2.md). The original dataset
+used external guest CPU samples; it predates the current runner’s phase-boundary
+CPU counters. The [published v1 report](framework-benchmarks/evidence/debian-v1/report.html)
+and [v1 protocol](framework-benchmarks/protocol-v1.md) remain available; reproduce
+v1 with the `benchmark-v1` tagged checkout.
 
-Suite completion and the offline `report` command regenerate `report.html`
-and, for complete measurement suites, `featured.svg` beside `suite.json`.
-Keep v2 charts with experimental evidence; do not replace the published featured
-chart until v2 is finalized and validated. Preparation and failed or incomplete
-suites produce only the detailed report.
+Suite completion and the offline `report` command produce a detailed report and,
+for complete measurement suites, a chart beside `suite.json`. Review results
+before promotion.
 
 Each target is one evolving implementation. Historical results stay tied to
 the exact component versions and configuration used.
@@ -195,7 +194,7 @@ tools/vm.sh exec fb-debian-v1 sudo systemctl stop postgresql@18-main
 
 ### Benchmark execution
 
-Use the [v2 development suite guide](framework-benchmarks/suite-v2.md) to prepare and run all
+Use the [v2 suite guide](framework-benchmarks/suite-v2.md) to prepare and run all
 four candidates on a dedicated Linux QEMU/KVM host. Keep new work under fresh
 paths in `work/`. See [Customize JVM settings](framework-benchmarks/custom-runs.md)
 to compare JVM configurations. The pre-release suite and report are archived under
@@ -204,8 +203,8 @@ to compare JVM configurations. The pre-release suite and report are archived und
 ### Regenerate the published v1 report
 
 Use the implementation at the `benchmark-v1` tag to regenerate historical v1
-reports. The current development runner handles v2 evidence only. The existing
-published report and featured chart remain unchanged pending v2 validation.
+reports. The current runner handles v2 evidence only. The historical
+published report and v1 chart remain available in the repository.
 
 ## Future comparisons
 

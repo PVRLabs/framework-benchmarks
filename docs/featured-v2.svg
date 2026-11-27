@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+<title id="title">Framework Benchmarks</title>
+<desc id="desc">Readiness, application RSS, latency and guest memory headroom for each recorded run. Lower is better for readiness time, application RSS and latency. Higher is better for guest memory headroom.</desc>
+<rect width="1200" height="760" fill="#f0f5fa"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#12283e">
+<text x="36" y="58" font-size="39" font-weight="700">Framework Benchmarks</text>
+<text x="36" y="94" font-size="23">Debian 13 · 1 vCPU · 512 MiB · PostgreSQL 18.7 · HotSpot 27 · 100 RPS sustained</text>
+<rect x="36" y="114" width="20" height="20" fill="#176b76"/><text x="66" y="131" font-size="20">Round 1</text>
+<rect x="181" y="114" width="20" height="20" fill="#6844a5"/><text x="211" y="131" font-size="20">Round 2</text>
+<rect x="36" y="152" width="554" height="254" rx="12" fill="white"/><text x="56" y="186" font-size="24" font-weight="700">App readiness (s)</text><text x="570" y="186" font-size="18" text-anchor="end">lower is better</text>
+<text x="56" y="226" font-size="20">Jex + Jdbi</text>
+<rect x="274" y="204" width="105.47" height="14" fill="#176b76"/><text x="386.47" y="217" font-size="18">5.10</text>
+<rect x="274" y="224" width="104.72" height="14" fill="#6844a5"/><text x="385.72" y="237" font-size="18">5.06</text>
+<text x="56" y="274" font-size="20">Quarkus + Jdbi</text>
+<rect x="274" y="252" width="125.04" height="14" fill="#176b76"/><text x="406.04" y="265" font-size="18">6.04</text>
+<rect x="274" y="272" width="121.93" height="14" fill="#6844a5"/><text x="402.93" y="285" font-size="18">5.89</text>
+<text x="56" y="322" font-size="20">Spring Boot + JDBC</text>
+<rect x="274" y="300" width="226.66" height="14" fill="#176b76"/><text x="507.66" y="313" font-size="18">10.96</text>
+<rect x="274" y="320" width="229.00" height="14" fill="#6844a5"/><text x="510.00" y="333" font-size="18">11.07</text>
+<text x="56" y="370" font-size="20">Micronaut Data JDBC</text>
+<rect x="274" y="348" width="156.01" height="14" fill="#176b76"/><text x="437.01" y="361" font-size="18">7.54</text>
+<rect x="274" y="368" width="165.25" height="14" fill="#6844a5"/><text x="446.25" y="381" font-size="18">7.99</text>
+<rect x="610" y="152" width="554" height="254" rx="12" fill="white"/><text x="630" y="186" font-size="24" font-weight="700">Sampled peak app RSS (MiB)</text><text x="1144" y="186" font-size="18" text-anchor="end">lower is better</text>
+<text x="630" y="226" font-size="20">Jex + Jdbi</text>
+<rect x="848" y="204" width="147.81" height="14" fill="#176b76"/><text x="1002.81" y="217" font-size="18">149.91</text>
+<rect x="848" y="224" width="154.77" height="14" fill="#6844a5"/><text x="1009.77" y="237" font-size="18">156.97</text>
+<text x="630" y="274" font-size="20">Quarkus + Jdbi</text>
+<rect x="848" y="252" width="205.21" height="14" fill="#176b76"/><text x="1060.21" y="265" font-size="18">208.14</text>
+<rect x="848" y="272" width="206.74" height="14" fill="#6844a5"/><text x="1061.74" y="285" font-size="18">209.69</text>
+<text x="630" y="322" font-size="20">Spring Boot + JDBC</text>
+<rect x="848" y="300" width="228.02" height="14" fill="#176b76"/><text x="1083.02" y="313" font-size="18">231.27</text>
+<rect x="848" y="320" width="229.00" height="14" fill="#6844a5"/><text x="1084.00" y="333" font-size="18">232.27</text>
+<text x="630" y="370" font-size="20">Micronaut Data JDBC</text>
+<rect x="848" y="348" width="214.06" height="14" fill="#176b76"/><text x="1069.06" y="361" font-size="18">217.11</text>
+<rect x="848" y="368" width="216.18" height="14" fill="#6844a5"/><text x="1071.18" y="381" font-size="18">219.26</text>
+<rect x="36" y="422" width="554" height="254" rx="12" fill="white"/><text x="56" y="456" font-size="24" font-weight="700">Sustained p99 latency (ms)</text><text x="570" y="456" font-size="18" text-anchor="end">lower is better</text>
+<text x="56" y="496" font-size="20">Jex + Jdbi</text>
+<rect x="274" y="474" width="182.42" height="14" fill="#176b76"/><text x="463.42" y="487" font-size="18">8.35</text>
+<rect x="274" y="494" width="229.00" height="14" fill="#6844a5"/><text x="510.00" y="507" font-size="18">10.48</text>
+<text x="56" y="544" font-size="20">Quarkus + Jdbi</text>
+<rect x="274" y="522" width="199.42" height="14" fill="#176b76"/><text x="480.42" y="535" font-size="18">9.12</text>
+<rect x="274" y="542" width="196.42" height="14" fill="#6844a5"/><text x="477.42" y="555" font-size="18">8.99</text>
+<text x="56" y="592" font-size="20">Spring Boot + JDBC</text>
+<rect x="274" y="570" width="227.32" height="14" fill="#176b76"/><text x="508.32" y="583" font-size="18">10.40</text>
+<rect x="274" y="590" width="220.48" height="14" fill="#6844a5"/><text x="501.48" y="603" font-size="18">10.09</text>
+<text x="56" y="640" font-size="20">Micronaut Data JDBC</text>
+<rect x="274" y="618" width="195.97" height="14" fill="#176b76"/><text x="476.97" y="631" font-size="18">8.97</text>
+<rect x="274" y="638" width="191.16" height="14" fill="#6844a5"/><text x="472.16" y="651" font-size="18">8.75</text>
+<rect x="610" y="422" width="554" height="254" rx="12" fill="white"/><text x="630" y="456" font-size="24" font-weight="700">Min guest MemAvailable (MiB)</text><text x="1144" y="456" font-size="18" text-anchor="end">higher is better</text>
+<text x="630" y="496" font-size="20">Jex + Jdbi</text>
+<rect x="848" y="474" width="229.00" height="14" fill="#176b76"/><text x="1084.00" y="487" font-size="18">197.59</text>
+<rect x="848" y="494" width="219.71" height="14" fill="#6844a5"/><text x="1074.71" y="507" font-size="18">189.57</text>
+<text x="630" y="544" font-size="20">Quarkus + Jdbi</text>
+<rect x="848" y="522" width="160.11" height="14" fill="#176b76"/><text x="1015.11" y="535" font-size="18">138.15</text>
+<rect x="848" y="542" width="154.50" height="14" fill="#6844a5"/><text x="1009.50" y="555" font-size="18">133.31</text>
+<text x="630" y="592" font-size="20">Spring Boot + JDBC</text>
+<rect x="848" y="570" width="127.00" height="14" fill="#176b76"/><text x="982.00" y="583" font-size="18">109.58</text>
+<rect x="848" y="590" width="130.69" height="14" fill="#6844a5"/><text x="985.69" y="603" font-size="18">112.77</text>
+<text x="630" y="640" font-size="20">Micronaut Data JDBC</text>
+<rect x="848" y="618" width="145.20" height="14" fill="#176b76"/><text x="1000.20" y="631" font-size="18">125.28</text>
+<rect x="848" y="638" width="143.32" height="14" fill="#6844a5"/><text x="998.32" y="651" font-size="18">123.66</text>
+<text x="36" y="710" font-size="19">Memory uses sampled peaks and minima. p99 includes client scheduling and SSH transport.</text>
+<text x="36" y="738" font-size="19">Complete application stacks. Jex and Quarkus use CoilBase for structure and persistence integration.</text>
+</g></svg>

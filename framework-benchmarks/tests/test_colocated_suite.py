@@ -111,7 +111,9 @@ class SuiteTest(unittest.TestCase):
             original_html = report.read_bytes()
             with patch.object(config, 'load', side_effect=AssertionError('configuration opened')):
                 suite.regenerate(manifest)
-            self.assertIn(b'Experimental protocol v2', original_html)
+            self.assertIn(b'Custom experiment using protocol v2', original_html)
+            self.assertIn(b'Protocol v2 with synthetic market prices', (root/'standard/report.html').read_bytes())
+            self.assertNotIn(b'Custom experiment', (root/'standard/report.html').read_bytes())
             self.assertEqual(report.read_bytes(), original_html)
             for field, value, message in (
                 ('warmup_seconds', 124, 'Manifest settings differ from protocol v2'),

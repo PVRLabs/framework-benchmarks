@@ -374,7 +374,9 @@ def render(suite, root):
     candidates = suite['candidates']
     esc = escape
     settings = suite['protocol']
-    introduction = ('Experimental protocol v2 with synthetic market prices. '
+    description = ('Custom experiment using protocol v2' if settings['id'].startswith('v2-custom')
+                   else 'Protocol v2')
+    introduction = (description + ' with synthetic market prices. '
                     + ('Two rounds with shortened smoke windows.' if settings['id'].endswith('-preparation')
                        else 'Two sequential rounds per candidate.'))
     limitation = ''
