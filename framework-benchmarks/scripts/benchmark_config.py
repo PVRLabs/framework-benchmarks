@@ -1,9 +1,9 @@
-"""Load the v1 JVM configuration."""
+"""Load the benchmark JVM configuration."""
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
 
-DEFAULT_PATH = Path(__file__).resolve().parents[1]/'config-v1.json'
+DEFAULT_PATH = Path(__file__).resolve().parents[1]/'config-v2.json'
 STANDARD = dict(java_executable='/opt/boot27/bin/java', jdk_build='27+35-2325',
                 jvm=['-Xms16m', '-Xmx80m', '-XX:+UseG1GC', '-Duser.timezone=UTC'])
 

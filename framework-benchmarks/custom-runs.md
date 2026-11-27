@@ -13,7 +13,7 @@ hardware and load can vary, so use these results to explore an idea.
 2. Run a baseline before editing the config. Open **Actions → JVM Benchmark →
    Run workflow**, select your branch, and start the run. If your fork already
    has custom settings, use a branch with the upstream config for the baseline.
-3. In your fork, open `framework-benchmarks/config-v1.json`, click the pencil
+3. In your fork, open `framework-benchmarks/config-v2.json`, click the pencil
    icon, edit the `jvm` array (see [Example JVM settings](#example-jvm-settings)),
    and commit. That commit starts **JVM Benchmark**
    automatically. You can also run it manually with any committed settings.
@@ -24,13 +24,13 @@ hardware and load can vary, so use these results to explore an idea.
 
 Preparation gives an early check that the apps start with your JVM settings.
 Full measurement takes about 49 minutes plus setup and preparation.
-**Correctness CI** uploads historical evidence under `archived-v1-report-…`.
 Your fresh measurements appear under `benchmark-results-…` in **JVM Benchmark**.
+To reproduce a historical v1 report, use a checkout of the `benchmark-v1` tag.
 
 ## Run locally
 
 For a controlled comparison, use any checkout on an x86-64 Linux host with
-KVM. Follow the [v1 suite guide](suite-v1.md) to prepare the VM and deploy the
+KVM. Follow the [v2 suite guide](suite-v2.md) to prepare the VM and deploy the
 applications once. Rebuild and redeploy reused bundles after pulling runner
 changes so they contain the guest runner from your current checkout.
 
@@ -38,7 +38,7 @@ From the repository root, make a config copy for the variant:
 
 ```sh
 mkdir -p work
-cp framework-benchmarks/config-v1.json work/my-jvm.json
+cp framework-benchmarks/config-v2.json work/my-jvm.json
 ```
 
 Edit the copy (see [Example JVM settings](#example-jvm-settings)). Start with
@@ -86,7 +86,7 @@ in the report or in each run’s `guest/effective-jvm-flags.txt`.
 [OpenJDK Java options](https://github.com/openjdk/jdk/blob/master/src/java.base/share/man/java.md)
 · [JEP 346](https://openjdk.org/jeps/346)
 
-The upstream [config-v1.json](config-v1.json) holds the frozen JVM defaults.
+The upstream [config-v2.json](config-v2.json) holds the frozen JVM defaults.
 For local runs with another JDK build, install it inside the Debian benchmark
 VM. Set `java_executable` to its absolute path inside that VM and `jdk_build`
 to the identifier reported by `<java_executable> -version` inside the VM.

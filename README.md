@@ -26,7 +26,7 @@ and periodic market price ingestion. These operations exercise HTTP, database
 access, transactions, and background processing.
 
 All four use the same PostgreSQL schema, correctness contract, and public
-synthetic replay. The featured results below use the accepted Debian 13 suite. See the [v1 suite guide](framework-benchmarks/suite-v1.md).
+synthetic replay. The featured results below use the accepted Debian 13 suite. See the [v1 suite guide](framework-benchmarks/suite-v1.md) and use the `benchmark-v1` tagged checkout to reproduce them.
 
 ## Featured benchmark — v1
 
@@ -98,9 +98,9 @@ remains archived with its own evidence.
 
 Suite completion and the offline `report` command regenerate `report.html`
 and, for complete measurement suites, `featured.svg` beside `suite.json`.
-Review the generated SVG and copy it to `docs/featured-v1.svg` only after
-publication approval. Preparation and failed or incomplete suites produce
-only the detailed report.
+Keep v2 charts with experimental evidence; do not replace the published featured
+chart until v2 is finalized and validated. Preparation and failed or incomplete
+suites produce only the detailed report.
 
 Each target is one evolving implementation. Historical results stay tied to
 the exact component versions and configuration used.
@@ -142,9 +142,8 @@ python3 -m unittest discover -s framework-benchmarks/tests
 [GitHub Actions](.github/workflows/ci.yml) runs on pushes and pull requests.
 It builds all four applications on Ubuntu with Temurin 25.0.4.1 and
 Maven 3.9.9, runs the available Java tests, checks the Linux distributions,
-runs the shared PostgreSQL verifier for all four candidates, and runs the fixture,
-workload and harness tests. It also compares a freshly
-generated offline report byte for byte with the accepted HTML.
+runs the shared PostgreSQL verifier for all four candidates, checks the upstream
+JVM defaults, and runs the fixture, workload and harness tests.
 
 ### VM setup
 
@@ -196,31 +195,20 @@ tools/vm.sh exec fb-debian-v1 sudo systemctl stop postgresql@18-main
 
 ### Benchmark execution
 
-Use the [v1 suite guide](framework-benchmarks/suite-v1.md) to prepare and run all
+Use the [v2 development suite guide](framework-benchmarks/suite-v2.md) to prepare and run all
 four candidates on a dedicated Linux QEMU/KVM host. Keep new work under fresh
 paths in `work/`. See [Customize JVM settings](framework-benchmarks/custom-runs.md)
 to compare JVM configurations. The pre-release suite and report are archived under
 `framework-benchmarks/evidence/v1-accepted/`.
 
-### Regenerate the featured report and chart
+### Regenerate the published v1 report
 
-```sh
-evidence_copy=$(mktemp -d)
-cp -a framework-benchmarks/evidence/debian-v1/. "$evidence_copy/"
-python3 framework-benchmarks/scripts/colocated-suite.py report "$evidence_copy/suite.json"
-cmp framework-benchmarks/evidence/debian-v1/report.html "$evidence_copy/report.html"
-cmp docs/featured-v1.svg "$evidence_copy/featured.svg"
-```
-
-The report generator uses Python’s standard library. The same command also
-works with the archived pre-release manifest.
+Use the implementation at the `benchmark-v1` tag to regenerate historical v1
+reports. The current development runner handles v2 evidence only. The existing
+published report and featured chart remain unchanged pending v2 validation.
 
 ## Future comparisons
 
 See the [branch strategy for benchmark experiments](framework-benchmarks/branch-strategy.md)
-for how we develop and publish new comparisons.
-
-We’ll explore additional frameworks, runtimes, and languages in experiment
-branches. Possible comparisons include Helidon, other Quarkus configurations,
-OpenJ9, and GraalVM Native Image. The maintained reference benchmark lives on
-`main`.
+for how we develop and publish new comparisons. Further framework, runtime and
+language comparisons can be developed in experiment branches.

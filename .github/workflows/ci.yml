@@ -118,7 +118,7 @@ jobs:
         run: |
           python3 framework-benchmarks/scripts/verify-postgres.py --local --micronaut \
             --output "$RUNNER_TEMP/micronaut-correctness"
-      - name: Check frozen upstream v1 JVM defaults
+      - name: Check upstream JVM defaults
         if: github.repository == 'PVRLabs/framework-benchmarks' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         env:
           PYTHONPATH: framework-benchmarks/scripts
@@ -127,24 +127,10 @@ jobs:
           import benchmark_config
 
           if benchmark_config.load() != benchmark_config.STANDARD:
-              raise SystemExit('Upstream config-v1.json must match the frozen v1 JVM settings')
+              raise SystemExit('Upstream config-v2.json must match the benchmark JVM defaults')
           PY
       - name: Test Python fixture, workload, and harness
         run: |
           python3 -m unittest discover -s market-replay-portfolio/fixture/tests
           python3 -m unittest discover -s market-replay-portfolio/workload
           python3 -m unittest discover -s framework-benchmarks/tests
-      - name: Verify offline report regeneration
-        run: |
-          evidence=framework-benchmarks/evidence/v1-accepted
-          cp -a "$evidence" "$RUNNER_TEMP/v1-report"
-          rm "$RUNNER_TEMP/v1-report/report.html"
-          python3 framework-benchmarks/scripts/colocated-suite.py report "$RUNNER_TEMP/v1-report/suite.json"
-          cmp "$evidence/report.html" "$RUNNER_TEMP/v1-report/report.html"
-          cmp "$evidence/featured.svg" "$RUNNER_TEMP/v1-report/featured.svg"
-      - name: Upload regenerated archived v1 report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: archived-v1-report-${{ github.run_number }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/v1-report
-          if-no-files-found: error

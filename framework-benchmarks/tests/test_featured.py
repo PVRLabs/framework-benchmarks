@@ -19,18 +19,18 @@ class FeaturedTest(unittest.TestCase):
                                        'available_mib': 160 + round_number}})
             for round_number in (1, 2) for key in suite.LABELS
         ]
-        data = dict(status='completed', protocol=suite.protocol(version='v1'), candidates=runs)
+        data = dict(status='completed', protocol=suite.protocol(), candidates=runs)
         svg = suite.featured_svg(data)
         self.assertEqual(svg, suite.featured_svg(data))
         labels = [element.text for element in ElementTree.fromstring(svg).iter('{http://www.w3.org/2000/svg}text')]
         self.assertIn("App readiness (s)", labels)
-        self.assertTrue(any("40 RPS sustained" in label for label in labels))
+        self.assertTrue(any("100 RPS sustained" in label for label in labels))
         self.assertTrue(any("HotSpot 27" in label for label in labels))
         custom = dict(suite.benchmark_config.STANDARD, jvm=['-Xmx90m'])
         digest = suite.benchmark_config.sha256(custom)
-        custom_svg = suite.featured_svg(dict(data, protocol=suite.protocol(version='v1', config=custom),
+        custom_svg = suite.featured_svg(dict(data, protocol=suite.protocol(config=custom),
                                              configuration_sha256=digest))
-        self.assertIn(f'Custom v1 · {digest[:12]}', custom_svg)
+        self.assertIn(f'Custom experiment · {digest[:12]}', custom_svg)
         self.assertNotIn("Database readiness (s)", labels)
         for label in ('Jex + Jdbi', 'Quarkus + Jdbi', 'Spring Boot + JDBC', 'Micronaut Data JDBC'):
             self.assertEqual(labels.count(label), 4)
@@ -38,7 +38,7 @@ class FeaturedTest(unittest.TestCase):
             self.assertEqual(labels.count(value), 4)
         for status in ('incomplete', 'failed'):
             self.assertIsNone(suite.featured_svg(dict(data, status=status)))
-        self.assertIsNone(suite.featured_svg(dict(data, protocol=suite.protocol(True, 'v1'))))
+        self.assertIsNone(suite.featured_svg(dict(data, protocol=suite.protocol(True))))
 
     def test_guest_storage_rejects_tmpfs(self):
         with patch.object(suite.subprocess, 'run'), patch.object(

@@ -18,6 +18,16 @@ with patch.object(sys, 'path', [str(Path(SPEC.origin).parent), *sys.path]):
 
 
 class HostCleanupTest(unittest.TestCase):
+    def test_driver_uses_32_pending_slots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with patch.object(runner, 'host_activity', return_value={}), \
+                 patch.object(runner.sp, 'run', side_effect=subprocess.TimeoutExpired('driver', 1)):
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    runner.run_load(output, 1, 100, 8)
+            config = json.loads((output/'load-config.json').read_text())
+            self.assertEqual((config['rate'], config['concurrency'], config['pending_capacity']), (100, 8, 32))
+
     def test_jvm_settings_reach_guest_command(self):
         settings = dict(java_executable='/opt/alternate JDK/bin/java',
                         jdk_build='27+35-2325', jvm=['-Xmx90m', '-Dexample=two words'])

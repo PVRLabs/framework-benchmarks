@@ -1,5 +1,8 @@
 # Framework Benchmarks v1 suite
 
+Historical guide: run these commands from the `benchmark-v1` tagged checkout.
+For current development use [the v2 suite guide](suite-v2.md).
+
 Run Jex, Quarkus, Spring Boot, and Micronaut in that order in each of two rounds.
 Every run uses the public synthetic replay. The runner records and checks the
 fixture and workload hashes. The [pre-release archive](evidence/v1-accepted/)

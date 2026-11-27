@@ -44,4 +44,4 @@ and launch with `java -jar portfolio-micronaut-data-jdbc.jar`. The app binds to
 loopback and uses the suite's `SERVER_PORT`, `MARKET_DB_*`,
 `PORTFOLIO_SEED_USERS` and `MARKET_POLL_*` inputs. It also accepts
 `MARKET_FIXTURE_URL`. See the [shared PostgreSQL verification instructions](../../README.md#postgresql-correctness)
-and the [v1 suite guide](../suite-v1.md).
+and the [v2 suite guide](../suite-v2.md).

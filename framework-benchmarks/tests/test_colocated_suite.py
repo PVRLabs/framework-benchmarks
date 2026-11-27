@@ -21,17 +21,12 @@ def write(path, data):
 
 
 class SuiteTest(unittest.TestCase):
-    def test_v2_matches_validated_workload_and_preserves_v1(self):
-        v1 = suite.protocol(version='v1', config=suite.benchmark_config.STANDARD)
-        v2 = suite.protocol(version='v2', config=suite.benchmark_config.STANDARD)
-        self.assertEqual((v1['sustained_rate'], v1['workers']), (40, 8))
-        self.assertEqual((v2['sustained_rate'], v2['workers'], v2['pending_capacity']), (100, 8, 32))
-        self.assertEqual(v2['jvm'], v1['jvm'])
-        self.assertIn('-Xmx80m', v2['jvm'])
-        self.assertEqual((v2['rounds'], v2['warmup_seconds'], v2['sustained_seconds']), (2, 125, 185))
-        self.assertEqual(v2['operations'], v1['operations'])
-        self.assertTrue(v2['guest_cpu_counters'])
-        self.assertIsNone(suite.featured_svg(dict(status='completed', protocol=v2, candidates=[])))
+    def test_v2_matches_validated_workload(self):
+        settings = suite.protocol()
+        self.assertEqual((settings['sustained_rate'], settings['workers'], settings['pending_capacity']), (100, 8, 32))
+        self.assertIn('-Xmx80m', settings['jvm'])
+        self.assertEqual((settings['rounds'], settings['warmup_seconds'], settings['sustained_seconds']), (2, 125, 185))
+        self.assertTrue(settings['guest_cpu_counters'])
 
     def test_guest_cpu_counter_deltas(self):
         self.assertEqual(suite.cpu_metrics('cpu 10 0 10 80 0 0 0 0', 'cpu 20 0 20 140 20 0 0 0'),
@@ -47,15 +42,16 @@ class SuiteTest(unittest.TestCase):
              patch.object(suite, 'verify_guest_storage'), \
              patch.object(suite.runner, 'main', return_value=True) as runner:
             self.assertTrue(suite.run_suite(Path(temp)/'v2', bundles, 'vm', '/runs',
-                                            version='v2', fail_fast=True))
+                                            fail_fast=True))
             args = runner.call_args.args[0]
             self.assertEqual(args[args.index('--rate')+1], '100')
             self.assertEqual(args[args.index('--workers')+1], '8')
-            self.assertEqual(args[args.index('--pending-capacity')+1], '32')
+            self.assertNotIn('--protocol', args)
             self.assertEqual(runner.call_count, 1)
 
     def test_configuration_loading_and_validation(self):
         config = suite.benchmark_config
+        self.assertEqual(config.DEFAULT_PATH.name, 'config-v2.json')
         defaults = config.load()
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp)/'custom.json'
@@ -90,15 +86,15 @@ class SuiteTest(unittest.TestCase):
                  patch.object(suite, 'verify_guest_storage'), \
                  patch.object(suite.runner, 'main', return_value=True) as runner:
                 for name, preparation, path, expected_id, expected_config in (
-                    ('custom', False, None, 'v1-custom', custom),
-                    ('custom-prep', True, None, 'v1-custom-preparation', custom),
-                    ('standard', False, explicit, 'v1', config.STANDARD),
-                    ('standard-prep', True, explicit, 'v1-preparation', config.STANDARD),
+                    ('custom', False, None, 'v2-custom', custom),
+                    ('custom-prep', True, None, 'v2-custom-preparation', custom),
+                    ('standard', False, explicit, 'v2', config.STANDARD),
+                    ('standard-prep', True, explicit, 'v2-preparation', config.STANDARD),
                 ):
                     with self.subTest(name=name):
                         runner.reset_mock()
                         self.assertTrue(suite.run_suite(root/name, bundles, 'vm', '/runs',
-                                                       preparation, 'v1', path))
+                                                       preparation, path))
                         recorded = suite.read_json(root/name/'suite.json')
                         self.assertEqual(recorded['protocol']['id'], expected_id)
                         encoded = json.dumps(expected_config, sort_keys=True, separators=(',', ':')).encode()
@@ -115,10 +111,10 @@ class SuiteTest(unittest.TestCase):
             original_html = report.read_bytes()
             with patch.object(config, 'load', side_effect=AssertionError('configuration opened')):
                 suite.regenerate(manifest)
-            self.assertIn(b'Custom experiment', original_html)
+            self.assertIn(b'Experimental protocol v2', original_html)
             self.assertEqual(report.read_bytes(), original_html)
             for field, value, message in (
-                ('warmup_seconds', 124, 'Manifest settings differ from protocol v1'),
+                ('warmup_seconds', 124, 'Manifest settings differ from protocol v2'),
                 ('jvm', ['-Xmx91m'], 'JVM configuration hash mismatch'),
                 ('configuration_sha256', '0'*64, 'JVM configuration hash mismatch'),
             ):
@@ -140,14 +136,17 @@ class SuiteTest(unittest.TestCase):
             settings = suite.protocol()
             settings.update(sustained_rate=1, sustained_seconds=1)
             candidate = dict(id='jex-coilbase', stack=suite.STACKS['jex-coilbase'],
-                             evidence='jex', execution='finished')
+                             evidence='round-01/jex-coilbase', round=1, execution='finished')
             manifest = root/'suite.json'
-            other_candidates = [dict(id=key, stack=suite.STACKS[key], evidence=key, execution='pending')
-                                for key in list(suite.STACKS)[1:]]
+            other_candidates = [dict(id=key, stack=suite.FOUR_CANDIDATE_STACKS[key],
+                                     evidence=f'round-{number:02d}/{key}', round=number, execution='pending')
+                                for number in (1, 2) for key in suite.FOUR_CANDIDATE_STACKS
+                                if (number, key) != (1, 'jex-coilbase')]
             write(manifest, dict(id='fixture', protocol=settings, created_utc='2026-11-17',
+                                 configuration_sha256=suite.benchmark_config.sha256(suite.benchmark_config.STANDARD),
                                  host='benchmark-host', vm='fixture', candidates=[candidate, *other_candidates]))
             config = dict(rate=1, duration_seconds=1, seed=42, users=1000,
-                          operations=settings['operations'], concurrency=8, pending_capacity=8)
+                          operations=settings['operations'], concurrency=8, pending_capacity=32, timeout_seconds=5)
             observation = dict(slot=0, scheduled_seconds=0, operation='portfolio',
                                outcome='success', status='200', dispatch_lag_ms=0,
                                started_seconds=0, completed_seconds=.01, queue_wait_ms=0,
@@ -161,33 +160,35 @@ class SuiteTest(unittest.TestCase):
                         successful_requests_per_second_including_drain=1,
                         successful_requests_per_second_in_window=1,
                         dropped_client_capacity=0, peak_in_flight=1, generator_saturated=False)
-            write(root/'jex/load-status.json', dict(status='completed', wall_seconds=1, exit_code=0))
-            write(root/'jex/load-config.json', config)
-            write(root/'jex/load.json', data)
-            result = suite.regenerate(manifest)['candidates'][0]['phases']['sustained']
+            write(root/'round-01/jex-coilbase/load-status.json', dict(status='completed', wall_seconds=1, exit_code=0))
+            write(root/'round-01/jex-coilbase/load-config.json', config)
+            write(root/'round-01/jex-coilbase/load.json', data)
+            with patch.object(suite, 'protocol', return_value=settings):
+                result = suite.regenerate(manifest)['candidates'][0]['phases']['sustained']
             self.assertEqual(result['status'], 'incomplete')  # Guest evidence is absent.
             self.assertEqual(result['p99_ms'], 10)
             data['latency_ms']['p99'] = 99
-            write(root/'jex/load.json', data)
-            result = suite.regenerate(manifest)['candidates'][0]['phases']['sustained']
+            write(root/'round-01/jex-coilbase/load.json', data)
+            with patch.object(suite, 'protocol', return_value=settings):
+                result = suite.regenerate(manifest)['candidates'][0]['phases']['sustained']
             self.assertEqual(result['status'], 'incomplete')
             self.assertIn('aggregate latency p99', result['reason'])
             self.assertNotIn('p99_ms', result)
 
     def test_sequential_failure_preserves_completed_phases_and_regenerates(self):
         with tempfile.TemporaryDirectory() as temp:
-            output = Path(temp)/'mvp'
+            output = Path(temp)/'v2'
             calls = []
 
-            def run_candidate(args):
+            def run_candidate(args, *, jvm_config):
                 key = args[args.index('--candidate')+1]
                 calls.append(key)
-                self.assertEqual(args[args.index('--warmup-seconds')+1], '15')
-                self.assertEqual(args[args.index('--duration-seconds')+1], '30')
-                self.assertEqual(args[args.index('--rate')+1], '40')
+                self.assertEqual(args[args.index('--warmup-seconds')+1], '125')
+                self.assertEqual(args[args.index('--duration-seconds')+1], '185')
+                self.assertEqual(args[args.index('--rate')+1], '100')
                 self.assertEqual(args[args.index('--suite-light-seconds')+1], '30')
-                self.assertEqual(args[args.index('--guest-run-root')+1], '/runs/mvp')
-                evidence = output/key
+                self.assertIn('/runs/v2/round-', args[args.index('--guest-run-root')+1])
+                evidence = Path(args[args.index('--output')+1])
                 write(evidence/'run.json', dict(status='failed', errors=['transfer <failed>']))
                 if key == 'jex-coilbase':
                     write(evidence/'guest/summary.json', dict(candidate=key, ready_seconds=1.5,
@@ -198,10 +199,11 @@ class SuiteTest(unittest.TestCase):
 
             with patch.object(suite.platform, 'node', return_value='benchmark-host'), \
                  patch.object(suite.platform, 'system', return_value='Linux'), \
+                 patch.object(suite, 'verify_guest_storage'), \
                  patch.object(suite.runner, 'main', side_effect=run_candidate):
-                self.assertTrue(suite.run_suite(output, {key: '/'+key for key in reversed(suite.STACKS)},
+                self.assertTrue(suite.run_suite(output, {key: '/'+key for key in reversed(suite.FOUR_CANDIDATE_STACKS)},
                                                 'vm', '/runs'))
-            self.assertEqual(calls, list(suite.STACKS))
+            self.assertEqual(calls, list(suite.FOUR_CANDIDATE_STACKS) * 2)
             manifest = output/'suite.json'
             original_manifest = manifest.read_bytes()
             recorded = json.loads(original_manifest)
@@ -225,7 +227,7 @@ class SuiteTest(unittest.TestCase):
             self.assertEqual((output/'report.html').read_text(), html)
             self.assertEqual(manifest.read_bytes(), original_manifest)
 
-    def test_v1_rounds_use_frozen_timing_and_unique_evidence(self):
+    def test_v2_rounds_use_frozen_timing_and_unique_evidence(self):
         roster = ('jex-coilbase', 'quarkus-coilbase', 'spring-boot', 'micronaut-data-jdbc')
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp)/'v1'
@@ -240,7 +242,7 @@ class SuiteTest(unittest.TestCase):
                 self.assertEqual(options['--suite-light-seconds'], '30')
                 self.assertEqual(options['--warmup-seconds'], '125')
                 self.assertEqual(options['--duration-seconds'], '185')
-                self.assertEqual(options['--rate'], '40')
+                self.assertEqual(options['--rate'], '100')
                 self.assertEqual(options['--workers'], '8')
                 write(evidence/'run.json', dict(status='failed', errors=[]))
                 return True
@@ -251,7 +253,7 @@ class SuiteTest(unittest.TestCase):
                  patch.object(suite.benchmark_config, 'load', return_value=suite.benchmark_config.STANDARD), \
                  patch.object(suite, 'verify_guest_storage') as verify_storage:
                 self.assertTrue(suite.run_suite(output, {key: '/'+key for key in roster},
-                                                'vm', '/runs', version='v1'))
+                                                'vm', '/runs'))
             verify_storage.assert_called_once_with('vm', '/runs')
             self.assertEqual(calls, [(f'round-{number:02d}', key) for number, key in expected])
             manifest = output/'suite.json'
@@ -266,7 +268,7 @@ class SuiteTest(unittest.TestCase):
             self.assertEqual((output/'report.html').read_bytes(), html)
             self.assertIn('Jex + Jdbi · Round 2'.encode(), html)
             self.assertFalse((output/'featured.svg').exists())
-            self.assertEqual(recorded['protocol']['id'], 'v1')
+            self.assertEqual(recorded['protocol']['id'], 'v2')
             self.assertEqual(recorded['protocol']['fixture_sha256'], suite.PUBLIC_FIXTURE_SHA256)
             recorded['candidates'].pop()
             write(manifest, recorded)
@@ -275,12 +277,12 @@ class SuiteTest(unittest.TestCase):
             recorded = json.loads(original)
             recorded['candidates'][-1]['evidence'] = recorded['candidates'][2]['evidence']
             write(manifest, recorded)
-            with self.assertRaisesRegex(ValueError, 'Unexpected protocol v1 evidence directory'):
+            with self.assertRaisesRegex(ValueError, 'Unexpected protocol v2 evidence directory'):
                 suite.regenerate(manifest)
             recorded = json.loads(original)
             recorded['protocol']['workers'] = 15
             write(manifest, recorded)
-            with self.assertRaisesRegex(ValueError, 'Manifest settings differ from protocol v1'):
+            with self.assertRaisesRegex(ValueError, 'Manifest settings differ from protocol v2'):
                 suite.regenerate(manifest)
 
     def test_cross_round_artifact_drift_excludes_both_runs(self):
@@ -309,21 +311,22 @@ class SuiteTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp)/'mvp'
 
-            def interrupt(args):
+            def interrupt(args, *, jvm_config):
                 evidence = Path(args[args.index('--output')+1])
                 write(evidence/'run.json', dict(status='failed', errors=['interrupted'], interrupted=True))
                 return True
 
             with patch.object(suite.platform, 'node', return_value='benchmark-host'), \
                  patch.object(suite.platform, 'system', return_value='Linux'), \
+                 patch.object(suite, 'verify_guest_storage'), \
                  patch.object(suite.runner, 'main', side_effect=interrupt) as runner:
-                self.assertTrue(suite.run_suite(output, {key: '/'+key for key in suite.STACKS},
+                self.assertTrue(suite.run_suite(output, {key: '/'+key for key in suite.FOUR_CANDIDATE_STACKS},
                                                 'vm', '/runs'))
                 runner.assert_called_once()
             recorded = suite.read_json(output/'suite.json')
             self.assertEqual(recorded['status'], 'incomplete')
             self.assertEqual([c['execution'] for c in recorded['candidates']],
-                             ['interrupted', 'pending', 'pending'])
+                             ['interrupted'] + ['pending'] * 7)
             html = (output/'report.html').read_text()
             self.assertIn('interrupted', html)
             self.assertIn('Raw evidence directory unavailable', html)
@@ -339,7 +342,7 @@ class SuiteTest(unittest.TestCase):
             for ids in (['jex-coilbase'], ['jex-coilbase', 'quarkus-coilbase', 'quarkus-coilbase']):
                 with self.subTest(ids=ids):
                     write(manifest, dict(candidates=[dict(id=key) for key in ids]))
-                    with self.assertRaisesRegex(ValueError, 'Expected exactly one'):
+                    with self.assertRaisesRegex(ValueError, 'Historical results require'):
                         suite.regenerate(manifest)
                     self.assertFalse((output/'report.html').exists())
 
@@ -350,8 +353,8 @@ class SuiteTest(unittest.TestCase):
             root = Path(temp)
             guest = root/'jex/guest'
             write(guest/'connections-after-idle.txt', 'checked')
-            write(guest/'idle-start.json', dict(monotonic=100))
-            write(guest/'idle-end.json', dict(monotonic=130))
+            write(guest/'idle-start.json', dict(monotonic=100, cpu_stat='cpu 10 0 10 80 0 0 0 0'))
+            write(guest/'idle-end.json', dict(monotonic=130, cpu_stat='cpu 20 0 20 140 20 0 0 0'))
             for stamps, expected in [([115], 'incomplete'),
                                      ([*range(101, 114), *range(119, 130)], 'incomplete'),
                                      (list(range(105, 130)), 'incomplete'),

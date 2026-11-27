@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - framework-benchmarks/config-v1.json
+      - framework-benchmarks/config-v2.json
 
 permissions:
   contents: read
