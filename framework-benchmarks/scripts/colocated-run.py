@@ -155,12 +155,12 @@ def host_activity():
             if Path('/proc', name).exists()}
 
 
-def run_load(output, seconds, rate=5, workers=8, name='load'):
+def run_load(output, seconds, rate=5, workers=8, name='load', pending_capacity=None):
     driver = ROOT/WORKLOAD
     config_path = output/f'{name}-config.json'
     config = json.loads(driver.with_name('default.json').read_text())
     config.update(base_url='http://127.0.0.1:18080', rate=rate, duration_seconds=seconds,
-                  concurrency=workers, pending_capacity=workers)
+                  concurrency=workers, pending_capacity=workers if pending_capacity is None else pending_capacity)
     config_path.write_text(json.dumps(config, indent=2)+'\n')
     result_path = output/f'{name}.json'
     command = [sys.executable, str(driver), '--config', str(config_path), '--output', str(result_path)]
@@ -197,7 +197,7 @@ def run_load(output, seconds, rate=5, workers=8, name='load'):
         (output/f'{name}-status.json').write_text(json.dumps(status, indent=2)+'\n')
 
 
-def run_load_guest(command, output, seconds, rate, workers, warmup, log, suite_light=None):
+def run_load_guest(command, output, seconds, rate, workers, warmup, log, suite_light=None, pending_capacity=None):
     with sp.Popen(command, stdin=sp.PIPE, stdout=log, stderr=sp.STDOUT, text=True) as guest:
         try:
             def wait_for(marker, timeout):
@@ -207,18 +207,19 @@ def run_load_guest(command, output, seconds, rate, workers, warmup, log, suite_l
                         raise RuntimeError(f'guest did not signal {marker}')
                     time.sleep(.1)
 
+            capacity = {} if pending_capacity is None else {'pending_capacity': pending_capacity}
             wait_for('LIGHT_READY', 150)
             if suite_light:
-                run_load(output, suite_light, 5, workers, 'light')
+                run_load(output, suite_light, 5, workers, 'light', **capacity)
                 guest.stdin.write('LIGHT_DONE\n')
                 guest.stdin.flush()
                 wait_for('SUSTAINED_READY', 10)
             if warmup:
-                run_load(output, warmup, rate, workers, 'warmup')
+                run_load(output, warmup, rate, workers, 'warmup', **capacity)
                 guest.stdin.write('WARMUP_DONE\n')
                 guest.stdin.flush()
                 wait_for('MEASUREMENT_READY', 10)
-            run_load(output, seconds, rate, workers)
+            run_load(output, seconds, rate, workers, **capacity)
             guest.stdin.write('LIGHT_DONE\n')
             guest.stdin.flush()
             code = guest.wait(timeout=45)
@@ -246,6 +247,7 @@ def main(argv=None, *, jvm_config=STANDARD):
     p.add_argument('--rate', type=int, default=20)
     p.add_argument('--warmup-seconds', type=int, default=0)
     p.add_argument('--workers', type=int, default=8)
+    p.add_argument('--pending-capacity', type=int)
     p.add_argument('--suite-light-seconds', type=int, choices=range(1, 61), metavar='1..60')
     p.add_argument('--require-debian-13', action='store_true')
     a = p.parse_args(argv)
@@ -253,7 +255,7 @@ def main(argv=None, *, jvm_config=STANDARD):
         p.error('suite light load requires sustained load with warm-up')
     if a.duration_seconds is not None and a.duration_seconds <= 0:
         p.error('--duration-seconds must be positive')
-    if a.rate <= 0 or a.workers <= 0 or a.warmup_seconds < 0:
+    if a.rate <= 0 or a.workers <= 0 or a.warmup_seconds < 0 or (a.pending_capacity is not None and a.pending_capacity <= 0):
         p.error('rate and workers must be positive and warm-up must be nonnegative')
     if a.duration_seconds is None and (a.warmup_seconds or a.rate != 20 or a.workers != 8):
         p.error('rate, warm-up and workers require --duration-seconds')
@@ -326,7 +328,8 @@ def main(argv=None, *, jvm_config=STANDARD):
         with (a.output/'runner.log').open('w') as f:
             if seconds:
                 run_load_guest(command, a.output, seconds, rate, a.workers, a.warmup_seconds, f,
-                               a.suite_light_seconds)
+                               a.suite_light_seconds, **({} if a.pending_capacity is None else
+                                                         {'pending_capacity': a.pending_capacity}))
             else:
                 call(*command,stdout=f,stderr=sp.STDOUT)
     except BaseException as e:

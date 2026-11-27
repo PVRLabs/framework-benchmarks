@@ -53,8 +53,8 @@ def protocol(preparation=False, version='3.4-mvp', *, archived=False, config=Non
                 light_rate=5, sustained_rate=40, workers=8, users=1000, seed=42,
                 sample_window_markers=True,
                 operations=dict(portfolio=40, edit=25, valuation=25, latest=8, history=2))
-    if version == 'v1':
-        protocol_id = 'v1' if values == benchmark_config.STANDARD else 'v1-custom'
+    if version in ('v1', 'v2'):
+        protocol_id = version if values == benchmark_config.STANDARD else version + '-custom'
         settings.update(id=protocol_id + ('-preparation' if preparation else ''),
                         rounds=2, warmup_seconds=3 if preparation else 125,
                         sustained_seconds=3 if preparation else 185,
@@ -63,6 +63,8 @@ def protocol(preparation=False, version='3.4-mvp', *, archived=False, config=Non
             settings.update(fixture_sha256=PUBLIC_FIXTURE_SHA256, postgres_version='18.7')
         if config is not None:
             settings['java_executable'] = values['java_executable']
+    if version == 'v2':
+        settings.update(sustained_rate=100, pending_capacity=32, guest_cpu_counters=True)
     return settings
 
 
@@ -127,6 +129,18 @@ def validate_sample_coverage(timestamps, duration, bounds=None):
               'Memory samples do not cover the phase boundaries')
 
 
+def cpu_metrics(start, end):
+    def parse(value):
+        fields = value.split()
+        check(fields[0] == 'cpu' and len(fields) >= 9, 'Invalid guest CPU counters')
+        return [int(v) for v in fields[1:9]]
+    before, after = parse(start), parse(end)
+    delta = [y-x for x, y in zip(before, after)]
+    check(all(v >= 0 for v in delta) and sum(delta) > 0, 'Invalid guest CPU counter delta')
+    return dict(guest_cpu_idle_pct=100 * delta[3] / sum(delta),
+                guest_cpu_iowait_pct=100 * delta[4] / sum(delta))
+
+
 def inspect_candidate(root, candidate, settings):
     run = root/candidate['evidence']
     guest = run/'guest'
@@ -164,7 +178,10 @@ def inspect_candidate(root, candidate, settings):
             rows = memory.samples_within(rows, start, end)
         validate_sample_coverage([row['monotonic'] for row in rows], duration, bounds)
         item = memory.summarize_phase(rows)
-        return dict(app_rss_mib=item['app']['process_rss_max_kib']/1024,
+        cpu = {}
+        if settings.get('guest_cpu_counters'):
+            cpu = cpu_metrics(read_json(start_path)['cpu_stat'], read_json(end_path)['cpu_stat'])
+        return dict(**cpu, app_rss_mib=item['app']['process_rss_max_kib']/1024,
                     app_pss_mib=item['app']['process_pss_max_kib']/1024,
                     postgres_pss_mib=item['postgres']['sampled_pss_sum_max_kib']/1024,
                     available_mib=item['mem_available_min_kib']/1024,
@@ -192,7 +209,7 @@ def inspect_candidate(root, candidate, settings):
         config = read_json(run/f'{name}-config.json')
         expected = dict(rate=rate, duration_seconds=settings[window], seed=settings['seed'],
                         users=settings['users'], operations=settings['operations'],
-                        concurrency=settings['workers'], pending_capacity=settings['workers'])
+                        concurrency=settings['workers'], pending_capacity=settings.get('pending_capacity', settings['workers']))
         if 'timeout_seconds' in settings:
             expected['timeout_seconds'] = settings['timeout_seconds']
         check(all(config[key] == value for key, value in expected.items()), 'Suite workload mismatch')
@@ -262,7 +279,7 @@ def inspect_candidate(root, candidate, settings):
         check(vm['vmType'] == 'qemu' and vm['cpus'] == 1 and vm['memory'] == 512*1024**2
               and any('KVM' in line for line in guest_env if line.startswith('Hypervisor vendor:'))
               and runtime['Guest swap'].split()[1:] == ['0', '0', '0'], 'Unexpected guest configuration')
-        custom = settings['id'].startswith('v1-custom')
+        custom = settings['id'].startswith(('v1-custom', 'v2-custom'))
         if not custom:
             check(runtime['JDK'].startswith('openjdk version "27"'), 'Unexpected JDK')
         if 'jdk_build' in settings:
@@ -380,6 +397,8 @@ def render(suite, root):
                        'Protocol v1 with synthetic market prices. ')
         introduction = description + ('Two rounds with shortened smoke windows.' if settings['id'].endswith('-preparation')
                            else 'Two sequential rounds per candidate.')
+    if settings['id'].startswith('v2'):
+        introduction = 'Experimental protocol v2 with synthetic market prices. Two sequential rounds per candidate.'
     if settings['id'].startswith('v1-custom'):
         introduction = ('Custom experiment using v1 methodology and synthetic market prices. '
                         + ('Two rounds with shortened smoke windows.' if settings['id'].endswith('-preparation')
@@ -440,6 +459,8 @@ when independently verified. Charts include completed phases with verified envir
             applicable += (('app_pss_mib', 'Peak app PSS (MiB)'),)
             if phase != 'idle':
                 applicable += (('queue_p99_ms', 'Queue p99 (ms)'), ('http_p99_ms', 'HTTP p99 (ms)'))
+        if settings.get('guest_cpu_counters') and phase != 'startup':
+            applicable += (('guest_cpu_idle_pct', 'Guest CPU idle (%)'), ('guest_cpu_iowait_pct', 'Guest CPU I/O wait (%)'))
         parts.append(f'<h2>{labels[phase]}</h2><table><thead><tr><th scope="col">Metric</th>')
         parts.extend(f'<th scope="col">{esc(candidate_label(c))}</th>' for c in candidates)
         parts.append('</tr></thead><tbody>')
@@ -527,7 +548,7 @@ def verify_round_artifacts(root, candidates):
 def featured_svg(suite):
     """Render a completed measurement suite using the same validated rows as HTML."""
     settings = suite['protocol']
-    if suite['status'] != 'completed' or settings['id'].endswith('-preparation'):
+    if suite['status'] != 'completed' or settings['id'].endswith('-preparation') or settings['id'].startswith('v2'):
         return None
     runs = suite['candidates']
     keys = [key for key in LABELS if any(run['id'] == key for run in runs)]
@@ -596,12 +617,12 @@ def regenerate(path, refresh=False):
     protocol_id = settings.get('id')
     version = (protocol_id or '').removesuffix('-preparation')
     synthetic = 'fixture_sha256' in settings
-    versioned = version in ('v1', 'v1-four-candidate', 'v1-custom')
+    versioned = version in ('v1', 'v1-four-candidate', 'v1-custom', 'v2', 'v2-custom')
     config = None
-    if 'java_executable' in settings or 'configuration_sha256' in suite or version == 'v1-custom':
+    if 'java_executable' in settings or 'configuration_sha256' in suite or version in ('v1-custom', 'v2-custom'):
         config = benchmark_config.validate({key: settings[key] for key in benchmark_config.STANDARD
                                             if key in settings})
-    if 'configuration_sha256' in suite or version == 'v1-custom':
+    if 'configuration_sha256' in suite or version in ('v1-custom', 'v2-custom'):
         check(suite.get('configuration_sha256') == benchmark_config.sha256(config),
               'JVM configuration hash mismatch')
     if versioned:
@@ -609,7 +630,7 @@ def regenerate(path, refresh=False):
         # synthetic preparation evidence used a temporary manifest identifier.
         stacks = FOUR_CANDIDATE_STACKS if synthetic else STACKS
         expected_settings = protocol(protocol_id.endswith('-preparation'),
-                                     'v1',
+                                     'v2' if version.startswith('v2') else 'v1',
                                      archived=version == 'v1' and not synthetic, config=config)
         if version == 'v1-four-candidate' and config is None:
             expected_settings['id'] = protocol_id
@@ -667,20 +688,20 @@ def verify_guest_storage(vm, guest_root):
 
 
 def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-mvp', config_path=None, fail_fast=False):
-    if config_path is not None:
+    if config_path is not None and version not in ('v1', 'v2'):
         version = 'v1'
-    stacks = FOUR_CANDIDATE_STACKS if version == 'v1' else STACKS
+    stacks = FOUR_CANDIDATE_STACKS if version in ('v1', 'v2') else STACKS
     check(bundles.keys() == stacks.keys(), 'Expected exactly one bundle for each of: ' + ', '.join(stacks))
-    if version == 'v1':
+    if version in ('v1', 'v2'):
         fixture = runner.FIXTURE/'data/quotes-2026-09-30.csv'
         check(hashlib.sha256(fixture.read_bytes()).hexdigest() == PUBLIC_FIXTURE_SHA256,
               'The v1 suite requires the public synthetic replay fixture')
     config = benchmark_config.load(config_path) if config_path is not None else (
-        benchmark_config.load() if version == 'v1' else None)
+        benchmark_config.load() if version in ('v1', 'v2') else None)
     settings = protocol(preparation, version, config=config)
     host = platform.node()
     check(platform.system() == 'Linux', 'Run the suite on a Linux host')
-    if version == 'v1':
+    if version in ('v1', 'v2'):
         verify_guest_storage(vm, guest_root)
     output.mkdir(parents=True, exist_ok=False)
     candidates = [dict(id=key, stack=stacks[key], bundle=bundles[key], evidence=key, execution='pending',
@@ -713,8 +734,10 @@ def run_suite(output, bundles, vm, guest_root, preparation=False, version='3.4-m
                     '--warmup-seconds', str(settings['warmup_seconds']),
                     '--duration-seconds', str(settings['sustained_seconds']),
                     '--rate', str(settings['sustained_rate']), '--workers', str(settings['workers'])]
-            if version == 'v1':
+            if version in ('v1', 'v2'):
                 args.append('--require-debian-13')
+            if version == 'v2':
+                args.extend(['--pending-capacity', str(settings['pending_capacity'])])
             if preparation:
                 args.append('--preparation')
             candidate['execution'] = 'running'
@@ -757,7 +780,7 @@ def main():
     run.add_argument('--vm', default='fb-512')
     run.add_argument('--guest-run-root', default='/var/tmp/fb-runs')
     run.add_argument('--bundle', action='append', required=True, metavar='CANDIDATE=/GUEST/PATH')
-    run.add_argument('--protocol', choices=('v1',), default='v1')
+    run.add_argument('--protocol', choices=('v1', 'v2'), default='v1')
     run.add_argument('--config', type=Path, help='JSON configuration for a custom v1 experiment')
     run.add_argument('--fail-fast', action='store_true', help='Stop after the first unsuccessful candidate')
     run.add_argument('--preparation', action='store_true')

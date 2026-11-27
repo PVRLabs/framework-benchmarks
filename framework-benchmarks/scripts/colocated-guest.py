@@ -44,6 +44,8 @@ def main():
     postgres_cgroup = None
     done = threading.Event()
     def save(name, obj):
+        if name.endswith(('-start.json', '-end.json')):
+            obj['cpu_stat'] = Path('/proc/stat').read_text().splitlines()[0]
         (out/name).write_text(json.dumps(obj, indent=2)+'\n')
     def capture(name, *cmd, **kw):
         with (out/name).open('w') as f:

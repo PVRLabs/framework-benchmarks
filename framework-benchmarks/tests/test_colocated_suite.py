@@ -21,6 +21,39 @@ def write(path, data):
 
 
 class SuiteTest(unittest.TestCase):
+    def test_v2_matches_validated_workload_and_preserves_v1(self):
+        v1 = suite.protocol(version='v1', config=suite.benchmark_config.STANDARD)
+        v2 = suite.protocol(version='v2', config=suite.benchmark_config.STANDARD)
+        self.assertEqual((v1['sustained_rate'], v1['workers']), (40, 8))
+        self.assertEqual((v2['sustained_rate'], v2['workers'], v2['pending_capacity']), (100, 8, 32))
+        self.assertEqual(v2['jvm'], v1['jvm'])
+        self.assertIn('-Xmx80m', v2['jvm'])
+        self.assertEqual((v2['rounds'], v2['warmup_seconds'], v2['sustained_seconds']), (2, 125, 185))
+        self.assertEqual(v2['operations'], v1['operations'])
+        self.assertTrue(v2['guest_cpu_counters'])
+        self.assertIsNone(suite.featured_svg(dict(status='completed', protocol=v2, candidates=[])))
+
+    def test_guest_cpu_counter_deltas(self):
+        self.assertEqual(suite.cpu_metrics('cpu 10 0 10 80 0 0 0 0', 'cpu 20 0 20 140 20 0 0 0'),
+                         dict(guest_cpu_idle_pct=60, guest_cpu_iowait_pct=20))
+        for value in ('cpu 1 2', 'cpu 1 0 0 0 0 0 0 0'):
+            with self.assertRaises(ValueError):
+                suite.cpu_metrics('cpu 10 0 10 80 0 0 0 0', value)
+
+    def test_v2_passes_queue_capacity_to_each_candidate(self):
+        bundles = {key: '/'+key for key in suite.FOUR_CANDIDATE_STACKS}
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.object(suite.platform, 'system', return_value='Linux'), \
+             patch.object(suite, 'verify_guest_storage'), \
+             patch.object(suite.runner, 'main', return_value=True) as runner:
+            self.assertTrue(suite.run_suite(Path(temp)/'v2', bundles, 'vm', '/runs',
+                                            version='v2', fail_fast=True))
+            args = runner.call_args.args[0]
+            self.assertEqual(args[args.index('--rate')+1], '100')
+            self.assertEqual(args[args.index('--workers')+1], '8')
+            self.assertEqual(args[args.index('--pending-capacity')+1], '32')
+            self.assertEqual(runner.call_count, 1)
+
     def test_configuration_loading_and_validation(self):
         config = suite.benchmark_config
         defaults = config.load()
