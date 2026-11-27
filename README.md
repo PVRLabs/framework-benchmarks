@@ -206,6 +206,11 @@ Use the implementation at the `benchmark-v1` tag to regenerate historical v1
 reports. The current runner handles v2 evidence only. The historical
 published report and v1 chart remain available in the repository.
 
+## Published runs and experiments
+
+See [benchmark runs and experiments](docs/benchmark-runs.md) for the historical
+v1 comparison and guidance for sharing community experiments.
+
 ## Future comparisons
 
 See the [branch strategy for benchmark experiments](framework-benchmarks/branch-strategy.md)
