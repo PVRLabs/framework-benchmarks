@@ -15,8 +15,8 @@ hardware and load can vary, so use these results to explore an idea.
    has custom settings, use a branch with the upstream config for the baseline.
 3. In your fork, open `framework-benchmarks/config-v2.json`, click the pencil
    icon, edit the `jvm` array (see [Example JVM settings](#example-jvm-settings)),
-   and commit. That commit starts **JVM Benchmark**
-   automatically. You can also run it manually with any committed settings.
+   and commit. Open **Actions → JVM Benchmark → Run workflow**, select the
+   branch containing your committed settings, and start the run manually.
 4. Open the benchmark run. Expand **Run preparation and benchmark measurements**
    for the results table. Under **Artifacts**, download
    `benchmark-results-<run number>-<attempt>` and open `measurement/report.html`
